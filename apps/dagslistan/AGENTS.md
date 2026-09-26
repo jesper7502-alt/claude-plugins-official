@@ -1,4 +1,4 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+This is an Expo (React Native for Web) website: the project targets web only (app.json "platforms": ["web"]) and is hosted on Firebase Hosting.
 
 ## Expo has changed — do not trust your training data
 

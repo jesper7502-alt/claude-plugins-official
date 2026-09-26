@@ -1,10 +1,3 @@
-/**
- * `checker` bygger avbockningssidan: bara Tasks-fliken, ingen inloggning och ingen planering.
- * Sätts med EXPO_PUBLIC_APP_MODE=checker (se npm-skriptet build:checker).
- */
-export const APP_MODE: 'admin' | 'checker' =
-  process.env.EXPO_PUBLIC_APP_MODE === 'checker' ? 'checker' : 'admin';
-
 export const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',
@@ -14,5 +7,5 @@ export const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? '',
 };
 
-/** Utan Firebase-uppgifter körs appen i demoläge med data sparad lokalt på enheten. */
+/** Utan Firebase-uppgifter körs sidan i demoläge med data sparad lokalt i webbläsaren. */
 export const HAS_FIREBASE = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);

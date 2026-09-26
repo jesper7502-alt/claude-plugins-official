@@ -32,13 +32,16 @@ export type Done = {
   doneAt: number;
 };
 
-export type Session = {
-  /** Inloggad planerare (inte anonym). */
-  signedIn: boolean;
-  email: string | null;
-  uid: string | null;
-  isAdmin: boolean;
-};
+/**
+ * admin: planerar och bockar av. member: ser och bockar av.
+ * none: inloggad men kontot finns varken i admins eller members.
+ */
+export type Role = 'admin' | 'member' | 'none';
+
+export type Session =
+  | { status: 'loading' }
+  | { status: 'signedOut' }
+  | { status: 'signedIn'; email: string | null; uid: string; role: Role };
 
 export const REPEAT_LABEL: Record<Repeat, string> = {
   none: 'Upprepas inte',

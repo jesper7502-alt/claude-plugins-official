@@ -1,5 +1,5 @@
 import { getApps, initializeApp } from 'firebase/app';
-import { onAuthStateChanged, signInAnonymously, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import {
   collection,
   deleteDoc,
@@ -19,8 +19,7 @@ import {
 } from 'firebase/firestore';
 
 import { firebaseConfig } from '../config';
-import { doneKey, type Done, type Person, type Repeat, type Task } from '../types';
-import { createAuth } from './auth';
+import { doneKey, type Done, type Person, type Repeat, type Role, type Task } from '../types';
 import type { Backend, Data } from './types';
 
 /** Hur många avbockningar historiken läser in. */
@@ -68,7 +67,7 @@ const toDone = (d: QueryDocumentSnapshot<DocumentData>): Done => {
 
 export function createFirebaseBackend(): Backend {
   const app = getApps()[0] ?? initializeApp(firebaseConfig);
-  const auth = createAuth(app);
+  const auth = getAuth(app);
   const db = initializeFirestore(app, {});
 
   return {
@@ -77,63 +76,45 @@ export function createFirebaseBackend(): Backend {
     subscribeData(cb, onError) {
       const data: Data = { people: [], tasks: [], done: [] };
       const loaded = { people: false, tasks: false, done: false };
-      let unsubs: (() => void)[] = [];
       const emit = () => {
         if (loaded.people && loaded.tasks && loaded.done) cb({ ...data });
       };
-      const start = () => {
-        unsubs = [
-          onSnapshot(collection(db, 'people'), (s) => {
-            data.people = s.docs.map(toPerson);
-            loaded.people = true;
-            emit();
-          }, onError),
-          onSnapshot(collection(db, 'tasks'), (s) => {
-            data.tasks = s.docs.map(toTask);
-            loaded.tasks = true;
-            emit();
-          }, onError),
-          onSnapshot(query(collection(db, 'done'), orderBy('doneAt', 'desc'), limit(DONE_LIMIT)), (s) => {
-            data.done = s.docs.map(toDone);
-            loaded.done = true;
-            emit();
-          }, onError),
-        ];
-      };
-      const stop = () => {
-        unsubs.forEach((u) => u());
-        unsubs = [];
-      };
-      // Läsning kräver en inloggad användare (anonym räcker). Starta om lyssnarna när användaren byts.
-      const unsubAuth = onAuthStateChanged(auth, (user) => {
-        stop();
-        if (user) start();
-      });
-      return () => {
-        unsubAuth();
-        stop();
-      };
+      const unsubs = [
+        onSnapshot(collection(db, 'people'), (s) => {
+          data.people = s.docs.map(toPerson);
+          loaded.people = true;
+          emit();
+        }, onError),
+        onSnapshot(collection(db, 'tasks'), (s) => {
+          data.tasks = s.docs.map(toTask);
+          loaded.tasks = true;
+          emit();
+        }, onError),
+        onSnapshot(query(collection(db, 'done'), orderBy('doneAt', 'desc'), limit(DONE_LIMIT)), (s) => {
+          data.done = s.docs.map(toDone);
+          loaded.done = true;
+          emit();
+        }, onError),
+      ];
+      return () => unsubs.forEach((u) => u());
     },
 
     subscribeSession(cb) {
       return onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-          // Den som inte loggat in blir anonym, vilket räcker för att läsa och bocka av.
-          signInAnonymously(auth).catch(() => {});
-          cb({ signedIn: false, email: null, uid: null, isAdmin: false });
+        if (!user || user.isAnonymous) {
+          cb({ status: 'signedOut' });
           return;
         }
-        if (user.isAnonymous) {
-          cb({ signedIn: false, email: null, uid: user.uid, isAdmin: false });
-          return;
-        }
-        let isAdmin = false;
-        try {
-          isAdmin = (await getDoc(doc(db, 'admins', user.uid))).exists();
-        } catch {
-          isAdmin = false;
-        }
-        cb({ signedIn: true, email: user.email, uid: user.uid, isAdmin });
+        // Rollen avgörs av om kontots uid finns i admins eller members (läggs in i Firebase-konsolen).
+        const has = async (col: string) => {
+          try {
+            return (await getDoc(doc(db, col, user.uid))).exists();
+          } catch {
+            return false;
+          }
+        };
+        const role: Role = (await has('admins')) ? 'admin' : (await has('members')) ? 'member' : 'none';
+        cb({ status: 'signedIn', email: user.email, uid: user.uid, role });
       });
     },
 

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
-import { Avatar, Button, Card, Chip, H1, Label, Muted, Screen, Segmented, styles } from '../components/ui';
+import { Avatar, Button, Card, Chip, Label, Muted, Screen, Segmented, styles } from '../components/ui';
 import { addDays, formatTime, parseIso, relativeDay, toIso, today } from '../lib/dates';
 import { useStore } from '../lib/store';
 import { useColors } from '../lib/theme';
@@ -33,14 +33,20 @@ export default function HistoryScreen() {
   }
 
   // Planerare kan ångra allt; andra (i Firebase) bara det senaste dygnet.
-  const canUndo = (d: Done) => s.session.isAdmin || now - d.doneAt < DAY_MS;
+  const canUndo = (d: Done) => s.isAdmin || now - d.doneAt < DAY_MS;
+
+  // Fliken syns bara för admin, men sidan kan nås via adressen.
+  if (!s.isAdmin) {
+    return (
+      <Screen>
+        <Muted>Historiken är bara för admin. Du kan bocka av tasks under Tasks.</Muted>
+      </Screen>
+    );
+  }
 
   return (
-    <Screen safeTop>
-      <View style={{ gap: 4 }}>
-        <H1>Genomfört</H1>
-        <Muted>{s.ready ? rows.length === 1 ? '1 task genomförd' : `${rows.length} tasks genomförda` : ''}</Muted>
-      </View>
+    <Screen>
+      <Muted>{s.ready ? (rows.length === 1 ? '1 task genomförd' : `${rows.length} tasks genomförda`) : ''}</Muted>
 
       <View style={{ gap: 10 }}>
         <Segmented<Period>

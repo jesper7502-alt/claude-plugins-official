@@ -4,8 +4,7 @@ import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
 import { DatePicker } from '../components/DatePicker';
 import { TaskRow } from '../components/TaskRow';
-import { Avatar, Card, Chip, H1, Label, Muted, Pill, Screen, Segmented, styles } from '../components/ui';
-import { APP_MODE } from '../lib/config';
+import { Avatar, Button, Card, Chip, H1, H2, Label, Muted, Pill, Screen, Segmented, styles } from '../components/ui';
 import { addDays, cap, formatLong, formatShort, isoWeek, parseIso, relativeDay, today } from '../lib/dates';
 import { countOpenOn, countOverdue, openFor, overdueFor, type Occurrence } from '../lib/occurrences';
 import { useStore, type ViewMode } from '../lib/store';
@@ -20,6 +19,7 @@ export default function TasksScreen() {
   const c = useColors();
   const t0 = today();
   const { mode, filter, pick } = s.prefs;
+  const me = s.person(s.prefs.me);
 
   const days = useMemo(() => {
     if (mode === 'today') return [t0];
@@ -32,7 +32,14 @@ export default function TasksScreen() {
   const late = countOverdue(s.tasks, s.doneIds);
   const doneToday = s.done.filter((d) => d.doneAt >= parseIso(t0).getTime()).length;
 
-  const visible = filter && s.person(filter) ? s.people.filter((p) => p.id === filter) : s.people;
+  // Den egna listan först, sedan de andras.
+  const visible =
+    filter && s.person(filter)
+      ? s.people.filter((p) => p.id === filter)
+      : me
+        ? [me, ...s.people.filter((p) => p.id !== me.id)]
+        : s.people;
+  const askWhoAmI = s.ready && !me && !s.isAdmin && s.people.length > 0;
 
   return (
     <Screen>
@@ -59,6 +66,18 @@ export default function TasksScreen() {
         ) : null}
       </View>
 
+      {askWhoAmI ? (
+        <Card style={{ borderColor: c.accent }}>
+          <H2>Vem är du?</H2>
+          <Muted>Välj dig själv så visas dina tasks först. Valet sparas på den här enheten.</Muted>
+          <View style={styles.wrap}>
+            {s.people.map((p) => (
+              <Chip key={p.id} label={p.name} person={p} onPress={() => s.setPrefs({ me: p.id, filter: '' })} />
+            ))}
+          </View>
+        </Card>
+      ) : null}
+
       <View style={{ gap: 10 }}>
         <View style={[styles.wrap, { alignItems: 'center' }]}>
           <Segmented<ViewMode>
@@ -72,7 +91,7 @@ export default function TasksScreen() {
           />
           {mode === 'pick' ? <DatePicker value={pick} onChange={(d) => s.setPrefs({ pick: d })} /> : null}
         </View>
-        {s.people.length > 1 ? (
+        {s.people.length > 1 && !askWhoAmI ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             <Chip label="Alla" selected={!filter} onPress={() => s.setPrefs({ filter: '' })} />
             {s.people.map((p) => (
@@ -87,18 +106,18 @@ export default function TasksScreen() {
       ) : s.people.length === 0 ? (
         <Card style={{ alignItems: 'center', paddingVertical: 36 }}>
           <Text style={{ color: c.ink, fontSize: 20, fontWeight: '700' }}>Inga personer än</Text>
-          {APP_MODE === 'checker' ? (
-            <Muted>Här visas tasks så fort någon har planerat dem.</Muted>
-          ) : (
+          {s.isAdmin ? (
             <Link href="/planering" style={{ color: c.accent, fontWeight: '700', fontSize: 15 }}>
               Lägg till personer och tasks under Planering →
             </Link>
+          ) : (
+            <Muted>Här visas tasks så fort de har planerats.</Muted>
           )}
         </Card>
       ) : (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
           {visible.map((p) => (
-            <PersonColumn key={p.id} person={p} days={days} showOverdue={showOverdue} mode={mode} />
+            <PersonColumn key={p.id} person={p} isMe={p.id === me?.id} days={days} showOverdue={showOverdue} mode={mode} />
           ))}
         </View>
       )}
@@ -106,7 +125,19 @@ export default function TasksScreen() {
   );
 }
 
-function PersonColumn({ person, days, showOverdue, mode }: { person: Person; days: string[]; showOverdue: boolean; mode: ViewMode }) {
+function PersonColumn({
+  person,
+  isMe,
+  days,
+  showOverdue,
+  mode,
+}: {
+  person: Person;
+  isMe: boolean;
+  days: string[];
+  showOverdue: boolean;
+  mode: ViewMode;
+}) {
   const s = useStore();
   const c = useColors();
 
@@ -124,11 +155,15 @@ function PersonColumn({ person, days, showOverdue, mode }: { person: Person; day
   const count = groups.reduce((n, g) => n + g.items.length, 0);
 
   return (
-    <Card style={{ flexGrow: 1, flexBasis: 300, gap: 4 }}>
+    <Card style={{ flexGrow: 1, flexBasis: isMe ? '100%' : 300, gap: 4, borderColor: isMe ? c.accent : c.line }}>
       <View style={[styles.row, { paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: c.line }]}>
         <Avatar person={person} size={34} />
-        <Text style={{ color: c.ink, fontSize: 19, fontWeight: '700', flex: 1 }}>{person.name}</Text>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={{ color: c.ink, fontSize: 19, fontWeight: '700' }}>{person.name}</Text>
+          {isMe ? <Text style={{ color: c.accent, fontSize: 12, fontWeight: '700', letterSpacing: 0.8 }}>DU</Text> : null}
+        </View>
         {count ? <Text style={{ color: c.muted, fontWeight: '700', fontSize: 13 }}>{count} kvar</Text> : null}
+        {isMe ? <Button label="Byt person" variant="ghost" onPress={() => s.setPrefs({ me: '' })} /> : null}
       </View>
       {groups.length === 0 ? (
         <Muted style={{ paddingVertical: 12, paddingHorizontal: 6 }}>{mode === 'upcoming' ? 'Inget planerat framöver.' : 'Allt klart! ✓'}</Muted>

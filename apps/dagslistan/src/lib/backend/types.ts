@@ -9,6 +9,7 @@ export type Data = {
 export interface Backend {
   /** 'firebase' eller 'demo' (lokal lagring utan server). */
   kind: 'firebase' | 'demo';
+  /** Anropas bara när användaren är admin eller member; annars nekar databasen läsning. */
   subscribeData(cb: (data: Data) => void, onError: (e: unknown) => void): () => void;
   subscribeSession(cb: (s: Session) => void): () => void;
 

@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { DatePicker } from '../components/DatePicker';
-import { Avatar, Button, Card, Chip, Field, H1, H2, Muted, Screen, styles } from '../components/ui';
-import { APP_MODE } from '../lib/config';
+import { Avatar, Button, Card, Chip, Field, H2, Muted, Screen, styles } from '../components/ui';
 import { formatShort, relativeDay, today } from '../lib/dates';
 import { useStore } from '../lib/store';
 import { radius, useColors } from '../lib/theme';
@@ -13,50 +12,18 @@ export default function PlanningScreen() {
   const s = useStore();
   const c = useColors();
 
-  if (APP_MODE === 'checker') {
+  // Fliken syns bara för admin, men sidan kan nås via adressen.
+  if (!s.isAdmin) {
     return (
-      <Screen safeTop>
-        <H1>Planering</H1>
-        <Muted>Planering görs i appen. Här kan du bara bocka av tasks.</Muted>
-      </Screen>
-    );
-  }
-  if (!s.session.signedIn) return <Login />;
-  if (!s.session.isAdmin) {
-    return (
-      <Screen safeTop>
-        <H1>Planering</H1>
-        <Card>
-          <H2>Kontot saknar behörighet</H2>
-          <Muted>
-            Du är inloggad som {s.session.email}, men kontot är inte planerare än. Lägg till ett dokument i samlingen
-            admins i Firestore med det här id:t (se README):
-          </Muted>
-          <Text selectable style={{ color: c.ink, fontFamily: 'monospace', backgroundColor: c.surface2, padding: 10, borderRadius: 8 }}>
-            {s.session.uid}
-          </Text>
-          <View style={styles.row}>
-            <Button label="Logga ut" variant="ghost" onPress={() => void s.signOut()} />
-          </View>
-        </Card>
+      <Screen>
+        <Muted>Planering är bara för admin. Du kan bocka av tasks under Tasks.</Muted>
       </Screen>
     );
   }
 
   return (
-    <Screen safeTop>
-      <View style={[styles.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
-        <View style={{ gap: 4, flexShrink: 1 }}>
-          <H1>Planering</H1>
-          <Muted>Ändringar syns direkt för alla.</Muted>
-        </View>
-        {s.backendKind === 'firebase' ? (
-          <View style={[styles.row, { flexShrink: 1 }]}>
-            <Muted>{s.session.email}</Muted>
-            <Button label="Logga ut" variant="ghost" onPress={() => void s.signOut()} />
-          </View>
-        ) : null}
-      </View>
+    <Screen>
+      <Muted>Ändringar syns direkt för alla.</Muted>
       {!s.ready ? (
         <ActivityIndicator color={c.accent} />
       ) : (
@@ -69,41 +36,6 @@ export default function PlanningScreen() {
           </View>
         </View>
       )}
-    </Screen>
-  );
-}
-
-function Login() {
-  const s = useStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const c = useColors();
-
-  const submit = async () => {
-    if (!email.trim() || !password) {
-      setErr('Fyll i e-post och lösenord.');
-      return;
-    }
-    setBusy(true);
-    setErr(await s.signIn(email.trim(), password));
-    setBusy(false);
-  };
-
-  return (
-    <Screen safeTop>
-      <H1>Planering</H1>
-      <Card style={{ maxWidth: 440 }}>
-        <H2>Logga in</H2>
-        <Muted>Bara planerare kan lägga till och ändra personer och tasks. Alla kan bocka av under Tasks.</Muted>
-        <Field label="E-post" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email" keyboardType="email-address" inputMode="email" />
-        <Field label="Lösenord" value={password} onChangeText={setPassword} secureTextEntry autoComplete="password" onSubmitEditing={submit} />
-        {err ? <Text style={{ color: c.warn }}>{err}</Text> : null}
-        <View style={styles.row}>
-          <Button label={busy ? 'Loggar in…' : 'Logga in'} onPress={submit} disabled={busy} />
-        </View>
-      </Card>
     </Screen>
   );
 }

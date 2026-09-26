@@ -4,26 +4,13 @@
     "slug": "dagslistan",
     "scheme": "dagslistan",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "platforms": ["web"],
     "userInterfaceStyle": "automatic",
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "se.dagslistan.app"
-    },
-    "android": {
-      "package": "se.dagslistan.app",
-      "adaptiveIcon": {
-        "backgroundColor": "#1E6B57",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
-    },
     "web": {
       "output": "single",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "themeColor": "#1E6B57",
+      "description": "Delad checklista: planera tasks per person och dag och bocka av med ett klick."
     },
     "plugins": ["expo-router"]
   }

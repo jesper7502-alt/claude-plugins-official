@@ -7,7 +7,7 @@ import type { Backend, Data } from './backend/types';
 import { HAS_FIREBASE } from './config';
 import { today } from './dates';
 import { PERSON_COLORS } from './theme';
-import { doneKey, type Done, type Person, type Session, type Task, type TaskInput } from './types';
+import { doneKey, type Done, type Person, type Role, type Session, type Task, type TaskInput } from './types';
 
 export type ViewMode = 'today' | 'upcoming' | 'pick';
 export type ToastState = { id: number; text: string; undo?: () => void } | null;
@@ -21,9 +21,13 @@ type Store = {
   done: Done[];
   doneIds: Set<string>;
   session: Session;
+  /** Inloggad användares roll, eller null om ingen är inloggad. */
+  role: Role | null;
+  isAdmin: boolean;
   person: (id: string) => Person | undefined;
 
-  prefs: { mode: ViewMode; filter: string; pick: string };
+  /** `me` är personen som valt "Vem är du?" på den här enheten. */
+  prefs: { mode: ViewMode; filter: string; pick: string; me: string };
   setPrefs: (p: Partial<Store['prefs']>) => void;
 
   toast: ToastState;
@@ -60,30 +64,38 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const backend = useMemo<Backend>(() => (HAS_FIREBASE ? createFirebaseBackend() : createDemoBackend()), []);
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [session, setSession] = useState<Session>({ signedIn: false, email: null, uid: null, isAdmin: false });
-  const [prefs, setPrefsState] = useState<Store['prefs']>({ mode: 'today', filter: '', pick: today() });
+  const [session, setSession] = useState<Session>({ status: 'loading' });
+  const [prefs, setPrefsState] = useState<Store['prefs']>({ mode: 'today', filter: '', pick: today(), me: '' });
   const [toast, setToast] = useState<ToastState>(null);
   const toastSeq = useRef(0);
 
-  useEffect(
-    () =>
-      backend.subscribeData(
-        (d) => {
-          setData(d);
-          setError(null);
-        },
-        (e) => setError(errorText(e)),
-      ),
-    [backend],
-  );
+  const role = session.status === 'signedIn' ? session.role : null;
+  const canRead = role === 'admin' || role === 'member';
+
   useEffect(() => backend.subscribeSession(setSession), [backend]);
+  // Läs data bara när kontot har behörighet, och släpp den vid utloggning.
+  useEffect(() => {
+    if (!canRead) return;
+    const unsub = backend.subscribeData(
+      (d) => {
+        setData(d);
+        setError(null);
+      },
+      (e) => setError(errorText(e)),
+    );
+    return () => {
+      unsub();
+      setData(null);
+      setError(null);
+    };
+  }, [backend, canRead]);
 
   useEffect(() => {
     AsyncStorage.getItem(PREFS_KEY)
       .then((raw) => {
         if (!raw) return;
         const p = JSON.parse(raw) as Partial<Store['prefs']>;
-        setPrefsState((s) => ({ ...s, mode: p.mode ?? s.mode, filter: p.filter ?? s.filter }));
+        setPrefsState((s) => ({ ...s, mode: p.mode ?? s.mode, filter: p.filter ?? s.filter, me: p.me ?? s.me }));
       })
       .catch(() => {});
   }, []);
@@ -91,7 +103,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const setPrefs = useCallback((p: Partial<Store['prefs']>) => {
     setPrefsState((s) => {
       const next = { ...s, ...p };
-      AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ mode: next.mode, filter: next.filter })).catch(() => {});
+      AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ mode: next.mode, filter: next.filter, me: next.me })).catch(() => {});
       return next;
     });
   }, []);
@@ -131,6 +143,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     done,
     doneIds,
     session,
+    role,
+    isAdmin: role === 'admin',
     person,
     prefs,
     setPrefs,

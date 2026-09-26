@@ -1,15 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { APP_MODE } from '../config';
 import { doneKey, type Done, type Person, type Session, type Task } from '../types';
 import type { Backend, Data } from './types';
 
 const KEY = 'dagslistan.demo.v1';
+const SESSION_KEY = 'dagslistan.demo.session.v1';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /**
- * Demoläge: all data sparas bara på den här enheten. Används när inga Firebase-uppgifter
- * finns, så att appen går att prova direkt. I demoläget är man alltid planerare.
+ * Demoläge: all data sparas bara i den här webbläsaren. Används när inga Firebase-uppgifter
+ * finns, så att sidan går att prova direkt. En e-post som börjar med "admin" loggar in som
+ * admin, alla andra som vanlig användare. Lösenordet kontrolleras inte.
  */
 export function createDemoBackend(): Backend {
   let data: Data = { people: [], tasks: [], done: [] };
@@ -40,7 +41,20 @@ export function createDemoBackend(): Backend {
       emit();
     });
 
-  const session: Session = { signedIn: APP_MODE === 'admin', email: 'demo', uid: 'demo', isAdmin: APP_MODE === 'admin' };
+  // Inloggningen sparas också, så att en omladdning inte loggar ut (som i Firebase).
+  let session: Session = { status: 'loading' };
+  const sessionListeners = new Set<(s: Session) => void>();
+  const setSession = (s: Session) => {
+    session = s;
+    sessionListeners.forEach((l) => l(s));
+    AsyncStorage.setItem(SESSION_KEY, JSON.stringify(s)).catch(() => {});
+  };
+  AsyncStorage.getItem(SESSION_KEY)
+    .then((raw) => {
+      const saved = raw ? (JSON.parse(raw) as Session) : null;
+      setSession(saved?.status === 'signedIn' ? saved : { status: 'signedOut' });
+    })
+    .catch(() => setSession({ status: 'signedOut' }));
 
   return {
     kind: 'demo',
@@ -50,11 +64,17 @@ export function createDemoBackend(): Backend {
       return () => listeners.delete(cb);
     },
     subscribeSession(cb) {
+      sessionListeners.add(cb);
       cb(session);
-      return () => {};
+      return () => sessionListeners.delete(cb);
     },
-    async signIn() {},
-    async signOut() {},
+    async signIn(email) {
+      const role = email.toLowerCase().startsWith('admin') ? 'admin' : 'member';
+      setSession({ status: 'signedIn', email, uid: `demo-${role}`, role });
+    },
+    async signOut() {
+      setSession({ status: 'signedOut' });
+    },
 
     async addPerson(name, color) {
       const p: Person = { id: uid(), name, color, createdAt: Date.now() };
