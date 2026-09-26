@@ -1,0 +1,62 @@
+rules_version = '2';
+
+// Dagslistan
+// - Planerare (uid finns i samlingen admins) får ändra personer och tasks.
+// - Alla inloggade, även anonyma besökare på avbockningssidan, får läsa och bocka av.
+// - Avbockning kan bara göras för en task som finns, av en person som är tilldelad den.
+// - Andra än planerare kan bara ångra avbockningar från det senaste dygnet.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false; // Läggs till för hand i Firebase-konsolen.
+    }
+
+    match /people/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40;
+      allow delete: if isAdmin();
+    }
+
+    match /tasks/{id} {
+      allow read: if signedIn();
+      allow create, update: if isAdmin()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.date is string
+        && request.resource.data.assignees is list
+        && request.resource.data.assignees.size() > 0;
+      allow delete: if isAdmin();
+    }
+
+    match /done/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['taskId', 'title', 'date', 'assignees', 'doneBy', 'doneByName', 'doneAt'])
+        && request.resource.data.taskId is string
+        && request.resource.data.date is string
+        && id == request.resource.data.taskId + '__' + request.resource.data.date
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.doneByName is string
+        && request.resource.data.doneByName.size() <= 40
+        && request.resource.data.doneAt == request.time
+        && exists(/databases/$(database)/documents/tasks/$(request.resource.data.taskId))
+        && request.resource.data.doneBy in get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.assignees;
+      allow update: if false;
+      allow delete: if isAdmin()
+        || (signedIn() && request.time < resource.data.doneAt + duration.value(1, 'd'));
+    }
+  }
+}
