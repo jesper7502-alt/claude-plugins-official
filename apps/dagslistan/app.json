@@ -5,11 +5,11 @@
     "scheme": "dagslistan",
     "version": "1.0.0",
     "platforms": ["web"],
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "web": {
       "output": "single",
       "favicon": "./assets/favicon.png",
-      "themeColor": "#1E6B57",
+      "themeColor": "#5B7FD6",
       "description": "Delad checklista: planera tasks per person och dag och bocka av med ett klick."
     },
     "plugins": ["expo-router"]

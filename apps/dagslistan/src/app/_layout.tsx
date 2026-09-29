@@ -35,7 +35,7 @@ function AppTabs({ admin }: { admin: boolean }) {
         headerTintColor: c.ink,
         headerTitleStyle: { fontWeight: '800' },
         headerRight: () => <SignOutButton />,
-        tabBarActiveTintColor: c.accent,
+        tabBarActiveTintColor: c.accentText,
         tabBarInactiveTintColor: c.muted,
         sceneStyle: { backgroundColor: c.bg },
         // Vanliga användare har bara Tasks och behöver ingen flikrad.
@@ -59,7 +59,7 @@ function Gate() {
   else body = <AppTabs admin={s.isAdmin} />;
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
       {body}
       <Toast />
     </View>

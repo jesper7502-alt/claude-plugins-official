@@ -55,7 +55,20 @@ export function Screen({ children, safeTop }: { children: ReactNode; safeTop?: b
 export function Card({ children, style }: { children: ReactNode; style?: ViewStyle }) {
   const c = useColors();
   return (
-    <View style={[{ backgroundColor: c.surface, borderColor: c.line, borderWidth: 1, borderRadius: radius.lg, padding: 16, gap: 12 }, style]}>
+    <View
+      style={[
+        {
+          backgroundColor: c.surface,
+          borderColor: c.line,
+          borderWidth: 1,
+          borderRadius: radius.lg,
+          padding: 16,
+          gap: 12,
+          boxShadow: '0 1px 2px rgba(31, 42, 68, 0.04), 0 8px 24px rgba(91, 127, 214, 0.08)',
+        },
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -113,7 +126,7 @@ export function Chip({
       ]}
     >
       {person ? <Avatar person={person} size={24} /> : null}
-      <Text style={{ color: selected ? c.accent : c.ink, fontWeight: '600', fontSize: 14 }}>{label}</Text>
+      <Text style={{ color: selected ? c.accentText : c.ink, fontWeight: '600', fontSize: 14 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -198,7 +211,7 @@ export function Field({ label, ...props }: TextInputProps & { label: string }) {
 export function Pill({ children, tone = 'plain' }: { children: ReactNode; tone?: 'plain' | 'warn' | 'ok' }) {
   const c = useColors();
   const bg = tone === 'warn' ? c.warnSoft : tone === 'ok' ? c.accentSoft : c.surface;
-  const fg = tone === 'warn' ? c.warn : tone === 'ok' ? c.accent : c.ink;
+  const fg = tone === 'warn' ? c.warn : tone === 'ok' ? c.accentText : c.ink;
   return (
     <View style={[styles.pill, { backgroundColor: bg, borderColor: tone === 'plain' ? c.line : bg }]}>
       <Text style={{ color: fg, fontWeight: '600', fontSize: 14 }}>{children}</Text>

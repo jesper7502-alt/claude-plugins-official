@@ -107,7 +107,7 @@ export default function TasksScreen() {
         <Card style={{ alignItems: 'center', paddingVertical: 36 }}>
           <Text style={{ color: c.ink, fontSize: 20, fontWeight: '700' }}>Inga personer än</Text>
           {s.isAdmin ? (
-            <Link href="/planering" style={{ color: c.accent, fontWeight: '700', fontSize: 15 }}>
+            <Link href="/planering" style={{ color: c.accentText, fontWeight: '700', fontSize: 15 }}>
               Lägg till personer och tasks under Planering →
             </Link>
           ) : (
@@ -160,7 +160,7 @@ function PersonColumn({
         <Avatar person={person} size={34} />
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: c.ink, fontSize: 19, fontWeight: '700' }}>{person.name}</Text>
-          {isMe ? <Text style={{ color: c.accent, fontSize: 12, fontWeight: '700', letterSpacing: 0.8 }}>DU</Text> : null}
+          {isMe ? <Text style={{ color: c.accentText, fontSize: 12, fontWeight: '700', letterSpacing: 0.8 }}>DU</Text> : null}
         </View>
         {count ? <Text style={{ color: c.muted, fontWeight: '700', fontSize: 13 }}>{count} kvar</Text> : null}
         {isMe ? <Button label="Byt person" variant="ghost" onPress={() => s.setPrefs({ me: '' })} /> : null}

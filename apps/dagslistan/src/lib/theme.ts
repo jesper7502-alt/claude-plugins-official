@@ -1,40 +1,28 @@
-import { useColorScheme } from 'react-native';
-
-const light = {
-  bg: '#F3F6F4',
+// Mjuk pastellblå palett. Sidan är alltid ljus, oavsett om enheten använder mörkt läge.
+const colors = {
+  bg: '#F2F5FC',
   surface: '#FFFFFF',
-  surface2: '#EAF0ED',
-  ink: '#15201B',
-  muted: '#5B6963',
-  line: '#DBE3DF',
-  accent: '#1E6B57',
+  surface2: '#E9EEF9',
+  ink: '#1F2A44',
+  muted: '#5E6A85',
+  line: '#DCE3F2',
+  /** Ytor och markeringar: knappar, bockar, valda chips. */
+  accent: '#5B7FD6',
   accentInk: '#FFFFFF',
-  accentSoft: '#DDEEE7',
-  warn: '#A8501C',
-  warnSoft: '#F7E6DA',
+  accentSoft: '#E3E9FA',
+  /** Blå text. Mörkare än accent så att den går att läsa på ljus bakgrund. */
+  accentText: '#3E5BB0',
+  warn: '#B0521E',
+  warnSoft: '#FBEADF',
 };
 
-const dark: typeof light = {
-  bg: '#0F1412',
-  surface: '#171E1B',
-  surface2: '#1F2824',
-  ink: '#E6EDEA',
-  muted: '#94A39C',
-  line: '#2A3531',
-  accent: '#5CC0A0',
-  accentInk: '#0D1A15',
-  accentSoft: '#1C3A30',
-  warn: '#E59767',
-  warnSoft: '#3A261A',
-};
-
-export type Colors = typeof light;
+export type Colors = typeof colors;
 
 export function useColors(): Colors {
-  return useColorScheme() === 'dark' ? dark : light;
+  return colors;
 }
 
-/** Personfärger. Mellantoner med vit text som fungerar i både ljust och mörkt läge. */
-export const PERSON_COLORS = ['#2F7D6D', '#3A63A8', '#9A4F9E', '#B5602F', '#6F7A1F', '#B23A5A', '#2B8499', '#6B5CC2'];
+/** Personfärger. Mjuka toner som passar paletten och bär vit text. */
+export const PERSON_COLORS = ['#5B7FD6', '#8A6FCF', '#3E9BB8', '#D07A96', '#DB8752', '#4FA88A', '#B08A34', '#72819E'];
 
 export const radius = { sm: 8, md: 12, lg: 18, pill: 999 };

@@ -86,7 +86,7 @@ export default function HistoryScreen() {
                 return (
                   <View key={d.id} style={[styles.row, { paddingVertical: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }]}>
                     <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: c.accent, fontWeight: '900', fontSize: 13 }}>✓</Text>
+                      <Text style={{ color: c.accentText, fontWeight: '900', fontSize: 13 }}>✓</Text>
                     </View>
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ color: c.ink, fontWeight: '600', fontSize: 16 }}>{d.title}</Text>

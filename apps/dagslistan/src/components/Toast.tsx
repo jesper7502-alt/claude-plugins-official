@@ -19,7 +19,7 @@ export function Toast() {
 
   if (!toast) return null;
   return (
-    <View pointerEvents="box-none" style={{ position: 'absolute', left: 16, right: 16, bottom: insets.bottom + 72, alignItems: 'center' }}>
+    <View style={{ pointerEvents: 'box-none', position: 'absolute', left: 16, right: 16, bottom: insets.bottom + 72, alignItems: 'center' }}>
       <View
         accessibilityLiveRegion="polite"
         style={{
@@ -32,11 +32,7 @@ export function Toast() {
           paddingLeft: 16,
           paddingRight: 10,
           maxWidth: 480,
-          shadowColor: '#000',
-          shadowOpacity: 0.2,
-          shadowRadius: 16,
-          shadowOffset: { width: 0, height: 6 },
-          elevation: 6,
+          boxShadow: '0 6px 24px rgba(31, 42, 68, 0.25)',
         }}
       >
         <Text numberOfLines={2} style={{ color: c.bg, flexShrink: 1, fontSize: 15 }}>{toast.text}</Text>
