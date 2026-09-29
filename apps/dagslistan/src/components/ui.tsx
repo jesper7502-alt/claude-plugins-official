@@ -176,12 +176,14 @@ export function Button({
 }: {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'ghost' | 'danger';
+  /** primary: huvudknapp. secondary: lika stor, ljus. ghost/danger: små knappar i listor. */
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
   disabled?: boolean;
 }) {
   const c = useColors();
   const primary = variant === 'primary';
-  const color = primary ? c.accentInk : variant === 'danger' ? c.warn : c.muted;
+  const secondary = variant === 'secondary';
+  const color = primary ? c.accentInk : secondary ? c.accentText : variant === 'danger' ? c.warn : c.muted;
   return (
     <Pressable
       onPress={onPress}
@@ -191,12 +193,14 @@ export function Button({
         styles.btn,
         primary
           ? { backgroundColor: c.accent, borderColor: c.accent }
-          : { backgroundColor: 'transparent', borderColor: variant === 'danger' ? c.warn : c.line },
+          : secondary
+            ? { backgroundColor: c.surface, borderColor: c.line }
+            : { backgroundColor: 'transparent', borderColor: variant === 'danger' ? c.warn : c.line },
         { opacity: disabled ? 0.5 : pressed ? 0.75 : 1 },
-        !primary && styles.btnSmall,
+        !primary && !secondary && styles.btnSmall,
       ]}
     >
-      <Text style={{ color, fontWeight: '700', fontSize: primary ? 15 : 13 }}>{label}</Text>
+      <Text style={{ color, fontWeight: '700', fontSize: primary || secondary ? 15 : 13 }}>{label}</Text>
     </Pressable>
   );
 }

@@ -40,6 +40,8 @@ function AppTabs({ admin }: { admin: boolean }) {
       <Tabs.Screen name="index" options={{ title: 'Tasks', headerTitle: 'Dagslistan', tabBarIcon: tabIcon('tasks') }} />
       <Tabs.Screen name="planering" options={{ title: 'Planering', tabBarIcon: tabIcon('planering'), href: admin ? undefined : null }} />
       <Tabs.Screen name="genomfort" options={{ title: 'Genomfört', tabBarIcon: tabIcon('genomfort'), href: admin ? undefined : null }} />
+      {/* Nås via knappen i Planering, syns inte i flikraden. */}
+      <Tabs.Screen name="installningar" options={{ title: 'Personer & kalendrar', href: null }} />
     </Tabs>
   );
 }

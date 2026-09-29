@@ -7,7 +7,7 @@ Alla loggar in. Vad man kan göra beror på kontot:
 
 | Konto | Ser | Kan |
 |---|---|---|
-| **Admin** | Tasks, Planering, Genomfört | Lägga till och ändra personer och tasks, bocka av, se historik och ångra |
+| **Admin** | Tasks, Planering, Genomfört | Lägga till och ändra tasks (Planering → *Alla tasks* för att ändra eller ta bort), personer och kalendrar (Planering → *Personer & kalendrar*), bocka av, se historik och ångra |
 | **Vanlig inloggning** (gemensam) | Tasks | Se allas tasks och bocka av. Väljer "Vem är du?" en gång per enhet; de egna tasks visas då överst. Kan byta djur på sin egen avatar. |
 
 Data och inloggning ligger i Firebase (Firestore, Authentication och Hosting). Firebase har en gratisnivå som räcker gott.
@@ -64,7 +64,7 @@ med nyckelordet (som standard `#task`) i titeln blir tasks för den personen. `#
 Ändrad titel, dag eller tid följer med, och en borttagen händelse tar bort tasken. Avbockade finns kvar i historiken.
 
 Kalendern hämtas när du är inloggad som admin och har sidan öppen: direkt och sedan var 15:e minut, 30 dagar framåt.
-Google-inloggningen gäller en timme i taget. Därefter visas knappen **Hämta från kalendern** under Planering.
+Du kan också hämta direkt med knappen **Uppdatera från Google Kalender** i Planering. Google-inloggningen gäller en timme i taget; knappen loggar in igen vid behov.
 
 **Engångsinställningar**
 
@@ -76,7 +76,7 @@ Google-inloggningen gäller en timme i taget. Därefter visas knappen **Hämta f
 3. **Skapa en kalender per person** i Google Kalender: [Skapa ny kalender](https://calendar.google.com/calendar/r/settings/createcalendar),
    t.ex. "Anna – Dagslistan". Du kan också använda befintliga kalendrar.
 4. Publicera reglerna igen med `npm run deploy`, så att kalenderinställningarna får sparas.
-5. Gå till **Planering → Google Kalender → Välj kalender** för varje person. Logga in med ditt Google-konto när fönstret öppnas.
+5. Gå till **Planering → Personer & kalendrar → Google Kalender → Välj kalender** för varje person. Logga in med ditt Google-konto när fönstret öppnas.
    - Visas **"Google har inte verifierat den här appen"**: klicka **Avancerat → Fortsätt till …** Appen är din egen och ber bara om läsrätt.
    - Står det att appen bara är **tillgänglig för testanvändare**: lägg till din Gmail-adress under
      `https://console.cloud.google.com/auth/audience?project=<ditt-projekt-id>` → *Test users* → **Add users**.

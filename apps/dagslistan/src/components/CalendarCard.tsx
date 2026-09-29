@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { router } from 'expo-router';
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useCalendar } from '../lib/calendar/CalendarProvider';
@@ -8,7 +9,42 @@ import { radius, useColors } from '../lib/theme';
 import type { Person } from '../lib/types';
 import { Avatar, Button, Card, Field, H2, Muted, Pill, styles } from './ui';
 
-/** Koppling till Google Kalender: vilken kalender som hör till vilken person, nyckelord och hämtning. */
+function lastSyncText(at?: number, result?: string): string | null {
+  if (!at) return null;
+  return `Senast hämtat ${relativeDay(toIso(new Date(at))).toLowerCase()} kl. ${formatTime(at)}` + (result ? ` · ${result}` : '');
+}
+
+/** Knappen i Planering som hämtar från Google Kalender (loggar in med Google vid behov). */
+export function CalendarSyncButton() {
+  const s = useStore();
+  const cal = useCalendar();
+  const c = useColors();
+  const hasLinks = Object.keys(cal.settings.calendars).length > 0;
+  const busy = cal.status !== 'idle';
+  const label = cal.status === 'syncing' ? 'Hämtar…' : cal.status === 'connecting' ? 'Loggar in…' : 'Uppdatera från Google Kalender';
+
+  const press = () => {
+    if (!hasLinks) {
+      s.showToast('Koppla en Google-kalender till en person först.');
+      router.push('/installningar');
+      return;
+    }
+    void cal.sync();
+  };
+
+  return (
+    <View style={{ gap: 4 }}>
+      <Button label={label} variant="secondary" onPress={press} disabled={busy} />
+      {cal.error ? (
+        <Text style={{ color: c.warn, fontSize: 13 }}>{cal.error}</Text>
+      ) : (
+        <Muted style={{ fontSize: 13 }}>{lastSyncText(cal.settings.lastSync, cal.settings.lastResult) ?? 'Inte hämtat ännu.'}</Muted>
+      )}
+    </View>
+  );
+}
+
+/** Koppling till Google Kalender: vilken kalender som hör till vilken person, och nyckelord. */
 export function CalendarCard() {
   const s = useStore();
   const cal = useCalendar();
@@ -18,13 +54,9 @@ export function CalendarCard() {
 
   const links = cal.settings.calendars;
   const hasLinks = Object.keys(links).length > 0;
-  const busy = cal.status !== 'idle';
   const kw = keyword ?? cal.settings.keyword;
 
-  const last = cal.settings.lastSync
-    ? `Senast hämtat ${relativeDay(toIso(new Date(cal.settings.lastSync))).toLowerCase()} kl. ${formatTime(cal.settings.lastSync)}` +
-      (cal.settings.lastResult ? ` · ${cal.settings.lastResult}` : '')
-    : null;
+  const last = lastSyncText(cal.settings.lastSync, cal.settings.lastResult);
 
   return (
     <Card>
@@ -33,9 +65,9 @@ export function CalendarCard() {
         {cal.connected ? <Pill tone="ok">Ansluten</Pill> : hasLinks ? <Pill>Inte inloggad</Pill> : null}
       </View>
       <Muted>
-        Händelser med <Text style={{ fontWeight: '700', color: c.ink }}>{cal.settings.keyword}</Text> i titeln blir tasks för den person
-        kalendern är kopplad till. Kalendern hämtas automatiskt var 15:e minut när du har sidan öppen. Ändringar och borttagna
-        händelser följer med.
+        Välj vilken Google-kalender som hör till varje person. Händelser med{' '}
+        <Text style={{ fontWeight: '700', color: c.ink }}>{cal.settings.keyword}</Text> i titeln blir tasks för den personen. Kalendern
+        hämtas automatiskt var 15:e minut när du har sidan öppen, och med knappen i Planering.
       </Muted>
 
       {s.people.length === 0 ? (
@@ -81,18 +113,6 @@ export function CalendarCard() {
 
       {cal.error ? <Text style={{ color: c.warn }}>{cal.error}</Text> : null}
       {last ? <Muted style={{ fontSize: 13 }}>{last}</Muted> : null}
-
-      <View style={[styles.row, { flexWrap: 'wrap' }]}>
-        {!cal.connected ? (
-          <Button label={busy ? 'Loggar in…' : hasLinks ? 'Hämta från kalendern' : 'Koppla Google Kalender'} onPress={() => void cal.connect()} disabled={busy} />
-        ) : (
-          <Button label={cal.status === 'syncing' ? 'Hämtar…' : 'Hämta nu'} onPress={() => void cal.sync()} disabled={busy || !hasLinks} />
-        )}
-        {busy ? <ActivityIndicator color={c.accent} /> : null}
-      </View>
-      {!cal.connected && hasLinks ? (
-        <Muted style={{ fontSize: 13 }}>Google-inloggningen gäller en timme i taget. Logga in igen för att fortsätta hämta automatiskt.</Muted>
-      ) : null}
 
       <CalendarPicker person={picking} onClose={() => setPicking(null)} />
     </Card>
