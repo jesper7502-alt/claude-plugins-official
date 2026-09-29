@@ -1,0 +1,15 @@
+{
+  "name": "Checklist - Familj",
+  "short_name": "Checklist - Familj",
+  "description": "Delad checklista: planera tasks per person och dag och bocka av med ett klick.",
+  "lang": "sv",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F2F5FC",
+  "theme_color": "#5B7FD6",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

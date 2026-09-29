@@ -1,0 +1,90 @@
+rules_version = '2';
+
+// Dagslistan
+// - Admin (uid finns i samlingen admins) får ändra personer och tasks.
+// - Vanliga användare (uid finns i samlingen members) får läsa, bocka av och byta djur på en person.
+// - Andra konton, t.ex. sådana som skapats via Firebase:s öppna API, får ingenting.
+// - Avbockning kan bara göras för en task som finns, av en person som är tilldelad den.
+// - Vanliga användare kan bara ångra avbockningar från det senaste dygnet.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function isMember() {
+      return signedIn()
+        && (exists(/databases/$(database)/documents/members/$(request.auth.uid)) || isAdmin());
+    }
+
+    // Båda samlingarna fylls i för hand i Firebase-konsolen. Man kan bara läsa sitt eget dokument.
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /members/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Djuret är valfritt; saknas det visas initialer.
+    function validAnimal() {
+      return !('animal' in request.resource.data)
+        || (request.resource.data.animal is string && request.resource.data.animal.size() <= 20);
+    }
+
+    match /people/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin()
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40
+        && validAnimal();
+      // Vanliga användare får byta djur på en person, men inget annat.
+      allow update: if isMember()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['animal'])
+        && validAnimal();
+      allow delete: if isAdmin();
+    }
+
+    match /tasks/{id} {
+      allow read: if isMember();
+      allow create, update: if isAdmin()
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.date is string
+        && request.resource.data.assignees is list
+        && request.resource.data.assignees.size() > 0
+        && (!('time' in request.resource.data)
+          || (request.resource.data.time is string && request.resource.data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')));
+      allow delete: if isAdmin();
+    }
+
+    // Kopplingen till Google Kalender (vilken kalender som hör till vilken person). Bara admin.
+    match /settings/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    match /done/{id} {
+      allow read: if isMember();
+      allow create: if isMember()
+        && request.resource.data.keys().hasOnly(['taskId', 'title', 'date', 'assignees', 'doneBy', 'doneByName', 'doneAt'])
+        && request.resource.data.taskId is string
+        && request.resource.data.date is string
+        && id == request.resource.data.taskId + '__' + request.resource.data.date
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.doneByName is string
+        && request.resource.data.doneByName.size() <= 40
+        && request.resource.data.doneAt == request.time
+        && exists(/databases/$(database)/documents/tasks/$(request.resource.data.taskId))
+        && request.resource.data.doneBy in get(/databases/$(database)/documents/tasks/$(request.resource.data.taskId)).data.assignees;
+      allow update: if false;
+      allow delete: if isAdmin()
+        || (isMember() && request.time < resource.data.doneAt + duration.value(1, 'd'));
+    }
+  }
+}

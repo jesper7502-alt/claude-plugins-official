@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Checklist - Familj",
+    "slug": "dagslistan",
+    "scheme": "dagslistan",
+    "version": "1.0.0",
+    "platforms": ["web"],
+    "userInterfaceStyle": "light",
+    "web": {
+      "output": "single",
+      "favicon": "./assets/favicon.png",
+      "themeColor": "#5B7FD6",
+      "description": "Delad checklista: planera tasks per person och dag och bocka av med ett klick."
+    },
+    "plugins": ["expo-router"]
+  }
+}

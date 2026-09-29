@@ -1,0 +1,40 @@
+{
+  "name": "dagslistan",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "expo": "~57.0.25",
+    "expo-constants": "~57.0.19",
+    "expo-linking": "~57.0.11",
+    "expo-router": "~57.0.23",
+    "expo-status-bar": "~57.0.1",
+    "firebase": "^12.19.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "~4.26.0",
+    "react-native-web": "~0.21.0"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "@types/node": "^22.20.4",
+    "@types/react": "~19.2.2",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
+    "firebase-tools": "^15.31.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "start": "expo start --web",
+    "build": "expo export --clear --platform web",
+    "deploy": "npm run build && firebase deploy --only hosting,firestore:rules",
+    "typecheck": "tsc --noEmit",
+    "lint": "expo lint",
+    "test:rules": "firebase emulators:exec --only firestore --project dagslistan-test \"node tests/firestore-rules.test.mjs\"",
+    "test:unit": "tsx --test tests/*.test.ts"
+  },
+  "private": true
+}
