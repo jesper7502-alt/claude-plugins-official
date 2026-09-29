@@ -1,4 +1,4 @@
-import type { Done, Person, Session, Task, TaskInput } from '../types';
+import type { CalendarSettings, Done, LinkedCalendar, Person, Session, Task, TaskInput } from '../types';
 
 export type Data = {
   people: Person[];
@@ -28,5 +28,29 @@ export interface Backend {
   removeTask(id: string): Promise<void>;
 
   markDone(task: Task, date: string, person: Person): Promise<void>;
+
+  /** Loggar in med Google och ger en åtkomstnyckel för att läsa kalendern (giltig ca en timme). */
+  connectGoogleCalendar(): Promise<GoogleToken>;
+  subscribeCalendarSettings(cb: (s: CalendarSettings | null) => void): () => void;
+  setPersonCalendar(personId: string, calendar: LinkedCalendar | null): Promise<void>;
+  setCalendarSettings(patch: Partial<Omit<CalendarSettings, 'calendars'>>): Promise<void>;
+  /** Skapar, uppdaterar och tar bort kalendertasks i ett svep. */
+  applyCalendarTasks(changes: CalendarTaskChanges): Promise<void>;
   undoDone(doneId: string): Promise<void>;
 }
+
+export type GoogleToken = { token: string; expiresAt: number };
+
+/** En kalendertask som den ska se ut efter hämtningen. `time: null` betyder heldag. */
+export type CalendarTaskFields = {
+  title: string;
+  date: string;
+  time: string | null;
+  assignees: string[];
+};
+
+export type CalendarTaskChanges = {
+  create: { id: string; fields: CalendarTaskFields }[];
+  update: { id: string; fields: CalendarTaskFields }[];
+  remove: string[];
+};

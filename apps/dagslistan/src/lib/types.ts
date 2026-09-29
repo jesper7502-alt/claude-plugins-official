@@ -17,6 +17,10 @@ export type Task = {
   repeat: Repeat;
   assignees: string[];
   createdAt: number;
+  /** 'gcal' för tasks som skapats från Google Kalender. Sådana ändras bara via kalendern. */
+  source?: 'gcal';
+  /** Klockslag "HH:MM" för händelser med tid (bara kalendertasks). */
+  time?: string;
 };
 
 export type TaskInput = Pick<Task, 'title' | 'date' | 'repeat' | 'assignees'>;
@@ -44,6 +48,21 @@ export type Session =
   | { status: 'loading' }
   | { status: 'signedOut' }
   | { status: 'signedIn'; email: string | null; uid: string; role: Role };
+
+/** En Google-kalender som kopplats till en person. */
+export type LinkedCalendar = { id: string; name: string };
+
+/** Inställningar för hämtning från Google Kalender. Bara admin kan läsa och ändra dem. */
+export type CalendarSettings = {
+  /** Bara händelser vars titel innehåller ordet blir tasks, t.ex. "#task". */
+  keyword: string;
+  /** Person-id → kalender. */
+  calendars: Record<string, LinkedCalendar>;
+  lastSync?: number;
+  lastResult?: string;
+};
+
+export const DEFAULT_KEYWORD = '#task';
 
 export const REPEAT_LABEL: Record<Repeat, string> = {
   none: 'Upprepas inte',

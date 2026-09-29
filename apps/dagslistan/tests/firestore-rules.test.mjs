@@ -77,6 +77,14 @@ await t('vanlig användare kan inte sätta för långt djurnamn', assertFails(up
 await t('främlingskonto kan inte byta djur', assertFails(updateDoc(doc(stranger, 'people/a'), { animal: 'fox' })));
 await t('admin kan skapa person med djur', assertSucceeds(setDoc(doc(admin, 'people/y'), { name: 'Y', color: '#000', animal: 'owl', createdAt: serverTimestamp() })));
 
+// Kalenderinställningar
+await t('admin kan spara kalenderinställningar', assertSucceeds(setDoc(doc(admin, 'settings/calendar'), { keyword: '#task', calendars: { a: { id: 'x@group.calendar.google.com', name: 'Anna' } } })));
+await t('admin kan läsa kalenderinställningar', assertSucceeds(getDoc(doc(admin, 'settings/calendar'))));
+await t('vanlig användare kan inte läsa kalenderinställningar', assertFails(getDoc(doc(member, 'settings/calendar'))));
+await t('vanlig användare kan inte ändra kalenderinställningar', assertFails(setDoc(doc(member, 'settings/calendar'), { keyword: 'x' })));
+await t('admin kan skapa kalendertask', assertSucceeds(setDoc(doc(admin, 'tasks/gcal_abc'), { ...task, source: 'gcal', time: '14:00' })));
+await t('vanlig användare kan inte skapa kalendertask', assertFails(setDoc(doc(member, 'tasks/gcal_def'), { ...task, source: 'gcal' })));
+
 // Avbockning
 await t('främlingskonto kan inte bocka av', assertFails(setDoc(doc(stranger, 'done/t1__2026-09-25'), done('t1', '2026-09-25', 'a'))));
 await t('anonym kan inte bocka av', assertFails(setDoc(doc(anon, 'done/t1__2026-09-25'), done('t1', '2026-09-25', 'a'))));

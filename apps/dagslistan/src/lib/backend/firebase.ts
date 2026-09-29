@@ -1,5 +1,13 @@
 import { getApps, initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  linkWithPopup,
+  onAuthStateChanged,
+  reauthenticateWithPopup,
+  signInWithEmailAndPassword,
+  signOut,
+} from 'firebase/auth';
 import {
   collection,
   deleteDoc,
@@ -20,11 +28,15 @@ import {
 } from 'firebase/firestore';
 
 import { firebaseConfig } from '../config';
-import { doneKey, type Done, type Person, type Repeat, type Role, type Task } from '../types';
-import type { Backend, Data } from './types';
+import { DEFAULT_KEYWORD, doneKey, type CalendarSettings, type Done, type Person, type Repeat, type Role, type Task } from '../types';
+import type { Backend, CalendarTaskFields, Data } from './types';
 
 /** Hur många avbockningar historiken läser in. */
 const DONE_LIMIT = 500;
+
+const CALENDAR_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly';
+/** Firestore tillåter högst 500 skrivningar per batch. */
+const BATCH_SIZE = 400;
 
 const millis = (v: unknown): number => {
   if (typeof v === 'number') return v;
@@ -54,8 +66,18 @@ const toTask = (d: QueryDocumentSnapshot<DocumentData>): Task => {
     repeat: (v.repeat ?? 'none') as Repeat,
     assignees: Array.isArray(v.assignees) ? v.assignees.map(String) : [],
     createdAt: millis(v.createdAt),
+    source: v.source === 'gcal' ? 'gcal' : undefined,
+    time: typeof v.time === 'string' ? v.time : undefined,
   };
 };
+
+const calendarFields = (f: CalendarTaskFields) => ({
+  title: f.title,
+  date: f.date,
+  repeat: 'none',
+  assignees: f.assignees,
+  time: f.time ?? deleteField(),
+});
 
 const toDone = (d: QueryDocumentSnapshot<DocumentData>): Done => {
   // 'estimate' ger en tid direkt för egna avbockningar innan servern har bekräftat dem.
@@ -176,6 +198,59 @@ export function createFirebaseBackend(): Backend {
     },
     async undoDone(doneId) {
       await deleteDoc(doc(db, 'done', doneId));
+    },
+
+    async connectGoogleCalendar() {
+      const user = auth.currentUser;
+      if (!user) throw Object.assign(new Error('not signed in'), { code: 'auth/no-current-user' });
+      const provider = new GoogleAuthProvider();
+      provider.addScope(CALENDAR_SCOPE);
+      // Första gången kopplas Google-kontot till admin-kontot; därefter loggar man bara in igen för en ny nyckel.
+      const linked = user.providerData.some((p) => p.providerId === 'google.com');
+      const result = linked ? await reauthenticateWithPopup(user, provider) : await linkWithPopup(user, provider);
+      const token = GoogleAuthProvider.credentialFromResult(result)?.accessToken;
+      if (!token) throw Object.assign(new Error('no token'), { code: 'gcal/no-token' });
+      // Googles åtkomstnycklar gäller en timme; räkna med lite marginal.
+      return { token, expiresAt: Date.now() + 55 * 60 * 1000 };
+    },
+
+    subscribeCalendarSettings(cb) {
+      return onSnapshot(
+        doc(db, 'settings', 'calendar'),
+        (s) => {
+          if (!s.exists()) return cb(null);
+          const v = s.data();
+          const settings: CalendarSettings = {
+            keyword: typeof v.keyword === 'string' && v.keyword ? v.keyword : DEFAULT_KEYWORD,
+            calendars: v.calendars && typeof v.calendars === 'object' ? v.calendars : {},
+            lastSync: typeof v.lastSync === 'number' ? v.lastSync : undefined,
+            lastResult: typeof v.lastResult === 'string' ? v.lastResult : undefined,
+          };
+          cb(settings);
+        },
+        () => cb(null),
+      );
+    },
+    async setPersonCalendar(personId, calendar) {
+      await setDoc(doc(db, 'settings', 'calendar'), { calendars: { [personId]: calendar ?? deleteField() } }, { merge: true });
+    },
+    async setCalendarSettings(patch) {
+      await setDoc(doc(db, 'settings', 'calendar'), patch, { merge: true });
+    },
+
+    async applyCalendarTasks({ create, update, remove }) {
+      const ops: ((b: ReturnType<typeof writeBatch>) => void)[] = [
+        ...create.map((c) => (b: ReturnType<typeof writeBatch>) =>
+          b.set(doc(db, 'tasks', c.id), { ...calendarFields(c.fields), source: 'gcal', createdAt: serverTimestamp() }),
+        ),
+        ...update.map((u) => (b: ReturnType<typeof writeBatch>) => b.update(doc(db, 'tasks', u.id), calendarFields(u.fields))),
+        ...remove.map((id) => (b: ReturnType<typeof writeBatch>) => b.delete(doc(db, 'tasks', id))),
+      ];
+      for (let i = 0; i < ops.length; i += BATCH_SIZE) {
+        const batch = writeBatch(db);
+        ops.slice(i, i + BATCH_SIZE).forEach((op) => op(batch));
+        await batch.commit();
+      }
     },
   };
 }

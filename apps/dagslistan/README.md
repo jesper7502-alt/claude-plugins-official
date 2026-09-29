@@ -57,6 +57,34 @@ Ge de andra adressen och den gemensamma inloggningen.
 **Lägga på hemskärmen:** öppna sidan i mobilen och välj *Dela → Lägg till på hemskärmen* (iPhone, Safari)
 eller *⋮ → Lägg till på startskärmen* (Android, Chrome).
 
+## Google Kalender
+
+Tasks kan skapas automatiskt från Google Kalender. Varje person kopplas till en egen kalender, och händelser
+med nyckelordet (som standard `#task`) i titeln blir tasks för den personen. `#task Tvätta` blir tasken "Tvätta".
+Ändrad titel, dag eller tid följer med, och en borttagen händelse tar bort tasken. Avbockade finns kvar i historiken.
+
+Kalendern hämtas när du är inloggad som admin och har sidan öppen: direkt och sedan var 15:e minut, 30 dagar framåt.
+Google-inloggningen gäller en timme i taget. Därefter visas knappen **Hämta från kalendern** under Planering.
+
+**Engångsinställningar**
+
+1. **Slå på Google-inloggning i Firebase:** *Authentication → Sign-in method → Add new provider → Google*
+   → slå på reglaget, välj din e-post som *support email* → **Save**.
+2. **Slå på Google Calendar API** för projektet: öppna
+   `https://console.cloud.google.com/apis/library/calendar-json.googleapis.com?project=<ditt-projekt-id>`
+   och klicka **Enable** (Aktivera).
+3. **Skapa en kalender per person** i Google Kalender: [Skapa ny kalender](https://calendar.google.com/calendar/r/settings/createcalendar),
+   t.ex. "Anna – Dagslistan". Du kan också använda befintliga kalendrar.
+4. Publicera reglerna igen med `npm run deploy`, så att kalenderinställningarna får sparas.
+5. Gå till **Planering → Google Kalender → Välj kalender** för varje person. Logga in med ditt Google-konto när fönstret öppnas.
+   - Visas **"Google har inte verifierat den här appen"**: klicka **Avancerat → Fortsätt till …** Appen är din egen och ber bara om läsrätt.
+   - Står det att appen bara är **tillgänglig för testanvändare**: lägg till din Gmail-adress under
+     `https://console.cloud.google.com/auth/audience?project=<ditt-projekt-id>` → *Test users* → **Add users**.
+
+**Bra att veta:** kalendertasks ändras bara i Google Kalender, inte i Dagslistan. En händelse som ligger i flera personers
+kalendrar blir en gemensam task. Sidan har bara läsrätt till kalendern, och Google-nyckeln sparas bara i webbläsarfliken,
+aldrig i databasen.
+
 ## Byta lösenord och lägga till fler
 
 - **Byta lösenord** på den gemensamma inloggningen: *Authentication → Users → ⋮ → Reset password*.
@@ -72,6 +100,7 @@ Reglerna i `firestore.rules` avgör vad som tillåts. Det är de som skyddar dat
 - Konton i `members` (och `admins`) kan läsa, bocka av och byta djur på en person. Alla andra nekas.
 - En avbockning godtas bara för en task som finns, av en person som är tilldelad den, och med serverns klockslag.
 - Vanliga användare kan bara ångra avbockningar från det senaste dygnet.
+- Kopplingen till Google Kalender (`settings`) kan bara admin läsa och ändra.
 
 Reglerna har automatiska tester. De kräver Java, som Firestore-emulatorn behöver:
 
@@ -95,6 +124,7 @@ npm start           # utvecklingsserver
 npm run typecheck
 npm run lint
 npm run test:rules
+npm run test:unit    # hur kalenderhändelser blir tasks
 ```
 
 Sidan är byggd med Expo (React Native for Web) och Expo Router. Skärmarna finns i `src/app/`,

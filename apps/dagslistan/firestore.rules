@@ -61,6 +61,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Kopplingen till Google Kalender (vilken kalender som hör till vilken person). Bara admin.
+    match /settings/{id} {
+      allow read, write: if isAdmin();
+    }
+
     match /done/{id} {
       allow read: if isMember();
       allow create: if isMember()

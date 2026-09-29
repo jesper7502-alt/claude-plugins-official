@@ -35,6 +35,7 @@ export function TaskRow({
   };
 
   const meta: string[] = [];
+  if (task.time) meta.push(`kl. ${task.time}`);
   if (showDate) meta.push(relativeDay(date));
   if (task.repeat !== 'none') meta.push(`↻ ${REPEAT_LABEL[task.repeat]}`);
   if (others.length) meta.push(`med ${others.map((o) => o.name).join(', ')}`);

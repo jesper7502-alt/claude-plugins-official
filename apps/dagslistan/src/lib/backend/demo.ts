@@ -1,10 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { doneKey, type Done, type Person, type Session, type Task } from '../types';
+import { DEFAULT_KEYWORD, doneKey, type CalendarSettings, type Done, type Person, type Session, type Task } from '../types';
 import type { Backend, Data } from './types';
 
 const KEY = 'dagslistan.demo.v1';
 const SESSION_KEY = 'dagslistan.demo.session.v1';
+const CALENDAR_KEY = 'dagslistan.demo.calendar.v1';
+/** Bara för automatiska tester: låtsas att Google-inloggningen lyckas. */
+const FAKE_GOOGLE_KEY = 'dagslistan.demo.fakeGoogle';
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
 /**
@@ -55,6 +58,20 @@ export function createDemoBackend(): Backend {
       setSession(saved?.status === 'signedIn' ? saved : { status: 'signedOut' });
     })
     .catch(() => setSession({ status: 'signedOut' }));
+
+  let calendar: CalendarSettings | null = null;
+  const calendarListeners = new Set<(s: CalendarSettings | null) => void>();
+  const setCalendar = (s: CalendarSettings) => {
+    calendar = s;
+    calendarListeners.forEach((l) => l(s));
+    AsyncStorage.setItem(CALENDAR_KEY, JSON.stringify(s)).catch(() => {});
+  };
+  AsyncStorage.getItem(CALENDAR_KEY)
+    .then((raw) => {
+      if (raw) setCalendar(JSON.parse(raw) as CalendarSettings);
+    })
+    .catch(() => {});
+  const calendarOrDefault = (): CalendarSettings => calendar ?? { keyword: DEFAULT_KEYWORD, calendars: {} };
 
   return {
     kind: 'demo',
@@ -127,6 +144,47 @@ export function createDemoBackend(): Backend {
     },
     async undoDone(doneId) {
       data = { ...data, done: data.done.filter((d) => d.id !== doneId) };
+      await save();
+    },
+
+    async connectGoogleCalendar() {
+      const fake = await AsyncStorage.getItem(FAKE_GOOGLE_KEY).catch(() => null);
+      if (fake !== '1') throw Object.assign(new Error('demo'), { code: 'gcal/demo' });
+      return { token: 'demo-token', expiresAt: Date.now() + 55 * 60 * 1000 };
+    },
+    subscribeCalendarSettings(cb) {
+      calendarListeners.add(cb);
+      cb(calendar);
+      return () => calendarListeners.delete(cb);
+    },
+    async setPersonCalendar(personId, cal) {
+      const current = calendarOrDefault();
+      const calendars = { ...current.calendars };
+      if (cal) calendars[personId] = cal;
+      else delete calendars[personId];
+      setCalendar({ ...current, calendars });
+    },
+    async setCalendarSettings(patch) {
+      setCalendar({ ...calendarOrDefault(), ...patch });
+    },
+    async applyCalendarTasks({ create, update, remove }) {
+      const gone = new Set(remove);
+      const changed = new Map(update.map((u) => [u.id, u.fields]));
+      const withFields = (t: Task, f: { title: string; date: string; time: string | null; assignees: string[] }): Task => ({
+        ...t,
+        title: f.title,
+        date: f.date,
+        repeat: 'none',
+        assignees: f.assignees,
+        time: f.time ?? undefined,
+      });
+      const tasks = data.tasks
+        .filter((t) => !gone.has(t.id))
+        .map((t) => (changed.has(t.id) ? withFields(t, changed.get(t.id)!) : t));
+      for (const c of create) {
+        tasks.push(withFields({ id: c.id, title: '', date: '', repeat: 'none', assignees: [], createdAt: Date.now(), source: 'gcal' }, c.fields));
+      }
+      data = { ...data, tasks };
       await save();
     },
   };

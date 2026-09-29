@@ -14,6 +14,7 @@ export type ViewMode = 'today' | 'upcoming' | 'pick';
 export type ToastState = { id: number; text: string; undo?: () => void } | null;
 
 type Store = {
+  backend: Backend;
   backendKind: Backend['kind'];
   ready: boolean;
   error: string | null;
@@ -137,6 +138,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const store: Store = {
+    backend,
     backendKind: backend.kind,
     ready: data !== null,
     error,

@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Login, NoAccess } from '../components/Login';
 import { tabIcon } from '../components/TabIcon';
 import { Toast } from '../components/Toast';
+import { CalendarProvider } from '../lib/calendar/CalendarProvider';
 import { StoreProvider, useStore } from '../lib/store';
 import { useColors } from '../lib/theme';
 
@@ -64,7 +65,9 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StoreProvider>
-        <Gate />
+        <CalendarProvider>
+          <Gate />
+        </CalendarProvider>
       </StoreProvider>
     </SafeAreaProvider>
   );

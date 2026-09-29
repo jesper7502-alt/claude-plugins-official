@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { AvatarButton } from '../components/AnimalPicker';
+import { CalendarCard } from '../components/CalendarCard';
 import { DatePicker } from '../components/DatePicker';
 import { Avatar, Button, Card, Chip, Field, H2, Muted, Screen, styles } from '../components/ui';
 import { formatShort, relativeDay, today } from '../lib/dates';
@@ -31,6 +32,7 @@ export default function PlanningScreen() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 16, alignItems: 'flex-start' }}>
           <View style={{ flexGrow: 1, flexBasis: 300, gap: 16 }}>
             <PeopleCard />
+            <CalendarCard />
           </View>
           <View style={{ flexGrow: 1.6, flexBasis: 340, gap: 16 }}>
             <TaskEditor />
@@ -198,7 +200,9 @@ function TaskEditor() {
         {tasks.map((t, i) => {
           const ps = t.assignees.map(s.person).filter((p) => !!p);
           const rep = t.repeat !== 'none';
-          const when = rep ? `${REPEAT_LABEL[t.repeat]} från ${formatShort(t.date)}` : relativeDay(t.date);
+          const gcal = t.source === 'gcal';
+          const when =
+            (rep ? `${REPEAT_LABEL[t.repeat]} från ${formatShort(t.date)}` : relativeDay(t.date)) + (t.time ? ` kl. ${t.time}` : '');
           const status = !rep && s.doneIds.has(doneKey(t.id, t.date)) ? ' · klar' : '';
           return (
             <View key={t.id} style={[styles.row, { paddingTop: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }]}>
@@ -209,14 +213,19 @@ function TaskEditor() {
                   </View>
                 ))}
               </View>
-              <Pressable style={{ flex: 1 }} onPress={() => edit(t)} accessibilityHint="Tryck för att ändra">
+              <Pressable
+                style={{ flex: 1 }}
+                onPress={() => (gcal ? s.showToast('Kalendertasks ändras i Google Kalender.') : edit(t))}
+                accessibilityHint={gcal ? 'Ändras i Google Kalender' : 'Tryck för att ändra'}
+              >
                 <Text style={{ color: c.ink, fontWeight: '600', fontSize: 16 }}>{t.title}</Text>
                 <Muted style={{ fontSize: 13 }}>
                   {when}
                   {status} · {ps.map((p) => p.name).join(', ')}
                 </Muted>
+                {gcal ? <Text style={{ color: c.accentText, fontSize: 12, fontWeight: '600', marginTop: 2 }}>📅 Från Google Kalender</Text> : null}
               </Pressable>
-              {confirm === t.id ? (
+              {gcal ? null : confirm === t.id ? (
                 <Button
                   label="Säker? Ta bort"
                   variant="danger"
