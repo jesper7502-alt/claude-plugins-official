@@ -1,12 +1,12 @@
 /// <reference types="node" />
-// Kalendertasks måste gå att skriva med Firestore-biblioteket (kontrolleras lokalt, utan nätverk): npm run test:unit
+// Tasks och kalendertasks måste gå att skriva med Firestore-biblioteket (kontrolleras lokalt, utan nätverk): npm run test:unit
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { initializeApp } from 'firebase/app';
 import { doc, getFirestore, writeBatch } from 'firebase/firestore';
 
-import { calendarCreateData, calendarUpdateData } from '../src/lib/backend/firebase';
+import { calendarCreateData, calendarUpdateData, taskCreateData, taskUpdateData } from '../src/lib/backend/firebase';
 
 const db = getFirestore(initializeApp({ projectId: 'demo-test', apiKey: 'test' }, 'calendar-firestore-test'));
 
@@ -25,5 +25,23 @@ test('ny task med tid sparar klockslaget', () => {
 test('ändring till heldag tar bort klockslaget', () => {
   assert.doesNotThrow(() =>
     writeBatch(db).update(doc(db, 'tasks', 'gcal_2'), calendarUpdateData({ title: 'Ring', date: '2026-10-05', time: null, assignees: ['a'] })),
+  );
+});
+
+test('egen task utan tid går att skapa (inget time-fält)', () => {
+  const data = taskCreateData({ title: 'Diska', date: '2026-10-05', repeat: 'daily', assignees: ['a'], time: null });
+  assert.equal('time' in data, false);
+  assert.doesNotThrow(() => writeBatch(db).set(doc(db, 'tasks', 't1'), data));
+});
+
+test('egen task med tid sparar klockslaget', () => {
+  const data = taskCreateData({ title: 'Medicin', date: '2026-10-05', repeat: 'daily', assignees: ['a'], time: '07:30' });
+  assert.equal(data.time, '07:30');
+  assert.doesNotThrow(() => writeBatch(db).set(doc(db, 'tasks', 't2'), data));
+});
+
+test('tid kan tas bort från en egen task', () => {
+  assert.doesNotThrow(() =>
+    writeBatch(db).update(doc(db, 'tasks', 't2'), taskUpdateData({ title: 'Medicin', date: '2026-10-05', repeat: 'daily', assignees: ['a'], time: null })),
   );
 });

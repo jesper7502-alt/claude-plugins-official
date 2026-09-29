@@ -5,11 +5,19 @@ export type Occurrence = { task: Task; date: string };
 
 const isOneOff = (t: Task) => !t.repeat || t.repeat === 'none';
 
+/** Tasks med tid först i tidsordning, sedan de utan tid i bokstavsordning. */
+export function byTimeThenTitle(a: Task, b: Task): number {
+  if (a.time && b.time) return a.time.localeCompare(b.time) || a.title.localeCompare(b.title, 'sv');
+  if (a.time) return -1;
+  if (b.time) return 1;
+  return a.title.localeCompare(b.title, 'sv');
+}
+
 /** Personens tasks en viss dag som inte är avbockade. */
 export function openFor(tasks: Task[], done: Set<string>, personId: string, day: string): Occurrence[] {
   return tasks
     .filter((t) => t.assignees.includes(personId) && occursOn(t, day) && !done.has(doneKey(t.id, day)))
-    .sort((a, b) => a.title.localeCompare(b.title, 'sv'))
+    .sort(byTimeThenTitle)
     .map((task) => ({ task, date: day }));
 }
 

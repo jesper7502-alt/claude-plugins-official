@@ -19,11 +19,12 @@ export type Task = {
   createdAt: number;
   /** 'gcal' för tasks som skapats från Google Kalender. Sådana ändras bara via kalendern. */
   source?: 'gcal';
-  /** Klockslag "HH:MM" för händelser med tid (bara kalendertasks). */
+  /** Klockslag "HH:MM". Saknas för tasks utan tid. */
   time?: string;
 };
 
-export type TaskInput = Pick<Task, 'title' | 'date' | 'repeat' | 'assignees'>;
+/** `time: null` betyder ingen tid. */
+export type TaskInput = Pick<Task, 'title' | 'date' | 'repeat' | 'assignees'> & { time: string | null };
 
 /** En avbockad förekomst. Id är alltid `${taskId}__${date}`. */
 export type Done = {

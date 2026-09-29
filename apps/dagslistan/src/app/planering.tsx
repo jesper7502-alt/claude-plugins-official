@@ -4,8 +4,10 @@ import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-nativ
 import { AvatarButton } from '../components/AnimalPicker';
 import { CalendarCard } from '../components/CalendarCard';
 import { DatePicker } from '../components/DatePicker';
+import { TimePicker } from '../components/TimePicker';
 import { Avatar, Button, Card, Chip, Field, H2, Muted, Screen, styles } from '../components/ui';
 import { formatShort, relativeDay, today } from '../lib/dates';
+import { byTimeThenTitle } from '../lib/occurrences';
 import { useStore } from '../lib/store';
 import { radius, useColors } from '../lib/theme';
 import { doneKey, REPEAT_LABEL, type Repeat, type Task } from '../lib/types';
@@ -124,6 +126,7 @@ function TaskEditor() {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(today());
   const [repeat, setRepeat] = useState<Repeat>('none');
+  const [time, setTime] = useState<string | null>(null);
   const [assign, setAssign] = useState<string[]>([]);
   const [err, setErr] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -132,6 +135,7 @@ function TaskEditor() {
     setEditId(null);
     setTitle('');
     setRepeat('none');
+    setTime(null);
     setAssign([]);
     setErr(null);
   };
@@ -140,6 +144,7 @@ function TaskEditor() {
     setTitle(t.title);
     setDate(t.date);
     setRepeat(t.repeat);
+    setTime(t.time ?? null);
     setAssign(t.assignees.filter((a) => s.person(a)));
     setErr(null);
   };
@@ -150,7 +155,7 @@ function TaskEditor() {
     const msg = !t ? 'Skriv vad som ska göras.' : !assign.length ? 'Välj minst en person.' : null;
     setErr(msg);
     if (msg) return;
-    const input = { title: t, date, repeat, assignees: assign };
+    const input = { title: t, date, repeat, time, assignees: assign };
     const ok = editId ? await s.updateTask(editId, input) : await s.addTask(input);
     if (ok) {
       s.showToast(editId ? `”${t}” sparad` : `”${t}” tillagd`);
@@ -158,14 +163,17 @@ function TaskEditor() {
     }
   };
 
-  const tasks = [...s.tasks].sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title, 'sv'));
+  const tasks = [...s.tasks].sort((a, b) => a.date.localeCompare(b.date) || byTimeThenTitle(a, b));
 
   return (
     <>
       <Card style={editId ? { borderColor: c.accent } : undefined}>
         <H2>{editId ? 'Ändra task' : 'Ny task'}</H2>
         <Field label="Vad ska göras?" value={title} onChangeText={setTitle} placeholder="t.ex. Tömma diskmaskinen" maxLength={120} />
-        <DatePicker label={repeat === 'none' ? 'Dag' : 'Första dagen'} value={date} onChange={setDate} />
+        <View style={[styles.row, { flexWrap: 'wrap', alignItems: 'flex-start', gap: 12 }]}>
+          <DatePicker label={repeat === 'none' ? 'Dag' : 'Första dagen'} value={date} onChange={setDate} />
+          <TimePicker label="Tid (valfritt)" value={time} onChange={setTime} />
+        </View>
         <View style={{ gap: 6 }}>
           <Text style={{ color: c.muted, fontSize: 13, fontWeight: '600' }}>Upprepa</Text>
           <View style={styles.wrap}>

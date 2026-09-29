@@ -115,12 +115,14 @@ export function createDemoBackend(): Backend {
     },
 
     async addTask(input) {
-      const t: Task = { id: uid(), ...input, createdAt: Date.now() };
+      const { time, ...rest } = input;
+      const t: Task = { id: uid(), ...rest, time: time ?? undefined, createdAt: Date.now() };
       data = { ...data, tasks: [...data.tasks, t] };
       await save();
     },
     async updateTask(id, input) {
-      data = { ...data, tasks: data.tasks.map((t) => (t.id === id ? { ...t, ...input } : t)) };
+      const { time, ...rest } = input;
+      data = { ...data, tasks: data.tasks.map((t) => (t.id === id ? { ...t, ...rest, time: time ?? undefined } : t)) };
       await save();
     },
     async removeTask(id) {

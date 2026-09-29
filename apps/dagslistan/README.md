@@ -110,6 +110,7 @@ npm run test:rules
 
 ## Bra att veta
 
+- En task kan ha ett klockslag (valfritt), t.ex. "Varje dag kl. 07:30". Tasks med tid visas först i tidsordning.
 - Varje person har ett tecknat djur som avatar (12 att välja mellan). Nya personer får ett ledigt djur automatiskt. Tryck på avataren för att byta: admin i Planering, vanliga användare på sin egen avatar under Tasks.
 
 - Den gemensamma inloggningen vet inte vem som sitter vid skärmen. Den som bockar av räknas som personen vars lista tasken bockades av i.

@@ -28,7 +28,7 @@ import {
 } from 'firebase/firestore';
 
 import { firebaseConfig } from '../config';
-import { DEFAULT_KEYWORD, doneKey, type CalendarSettings, type Done, type Person, type Repeat, type Role, type Task } from '../types';
+import { DEFAULT_KEYWORD, doneKey, type CalendarSettings, type Done, type Person, type Repeat, type Role, type Task, type TaskInput } from '../types';
 import type { Backend, CalendarTaskFields, Data } from './types';
 
 /** Hur många avbockningar historiken läser in. */
@@ -70,6 +70,16 @@ const toTask = (d: QueryDocumentSnapshot<DocumentData>): Task => {
     time: typeof v.time === 'string' ? v.time : undefined,
   };
 };
+
+/** Ny egen task. Firestore tar inte emot undefined, så en task utan tid saknar fältet. */
+export const taskCreateData = ({ time, ...rest }: TaskInput) => ({
+  ...rest,
+  ...(time ? { time } : {}),
+  createdAt: serverTimestamp(),
+});
+
+/** Ändrad egen task. Tas tiden bort raderas fältet. */
+export const taskUpdateData = ({ time, ...rest }: TaskInput) => ({ ...rest, time: time ?? deleteField() });
 
 /** Ny kalendertask. Heldag saknar `time`; deleteField() är inte tillåtet när ett dokument skapas. */
 export const calendarCreateData = (f: CalendarTaskFields) => ({
@@ -188,10 +198,10 @@ export function createFirebaseBackend(): Backend {
     },
 
     async addTask(input) {
-      await setDoc(doc(collection(db, 'tasks')), { ...input, createdAt: serverTimestamp() });
+      await setDoc(doc(collection(db, 'tasks')), taskCreateData(input));
     },
     async updateTask(id, input) {
-      await updateDoc(doc(db, 'tasks', id), { ...input });
+      await updateDoc(doc(db, 'tasks', id), taskUpdateData(input));
     },
     async removeTask(id) {
       await deleteDoc(doc(db, 'tasks', id));

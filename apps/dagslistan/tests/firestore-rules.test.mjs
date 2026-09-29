@@ -85,6 +85,12 @@ await t('vanlig användare kan inte ändra kalenderinställningar', assertFails(
 await t('admin kan skapa kalendertask', assertSucceeds(setDoc(doc(admin, 'tasks/gcal_abc'), { ...task, source: 'gcal', time: '14:00' })));
 await t('vanlig användare kan inte skapa kalendertask', assertFails(setDoc(doc(member, 'tasks/gcal_def'), { ...task, source: 'gcal' })));
 
+// Tid på tasks
+await t('admin kan skapa task med tid', assertSucceeds(setDoc(doc(admin, 'tasks/tid1'), { ...task, time: '07:30' })));
+await t('admin kan inte spara ogiltig tid', assertFails(setDoc(doc(admin, 'tasks/tid2'), { ...task, time: '25:00' })));
+await t('admin kan inte spara tid som inte är text', assertFails(setDoc(doc(admin, 'tasks/tid3'), { ...task, time: 730 })));
+await t('admin kan ta bort tiden', assertSucceeds(updateDoc(doc(admin, 'tasks/tid1'), { time: deleteField() })));
+
 // Avbockning
 await t('främlingskonto kan inte bocka av', assertFails(setDoc(doc(stranger, 'done/t1__2026-09-25'), done('t1', '2026-09-25', 'a'))));
 await t('anonym kan inte bocka av', assertFails(setDoc(doc(anon, 'done/t1__2026-09-25'), done('t1', '2026-09-25', 'a'))));

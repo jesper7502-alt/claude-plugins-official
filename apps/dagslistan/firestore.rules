@@ -57,7 +57,9 @@ service cloud.firestore {
         && request.resource.data.title.size() <= 120
         && request.resource.data.date is string
         && request.resource.data.assignees is list
-        && request.resource.data.assignees.size() > 0;
+        && request.resource.data.assignees.size() > 0
+        && (!('time' in request.resource.data)
+          || (request.resource.data.time is string && request.resource.data.time.matches('^([01][0-9]|2[0-3]):[0-5][0-9]$')));
       allow delete: if isAdmin();
     }
 
