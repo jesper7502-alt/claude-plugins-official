@@ -96,8 +96,11 @@ function syncErrorText(e: unknown): string {
     return `Google svarade med ett fel: ${e.message}`;
   }
   const code = (e as { code?: string })?.code ?? '';
-  if (code === 'permission-denied') return 'Du har inte behörighet att spara kalendertasks.';
-  return 'Det gick inte att hämta från kalendern. Kontrollera nätet och försök igen.';
+  if (code === 'permission-denied') return 'Du har inte behörighet att spara kalendertasks. Kör npm run deploy så att de nya reglerna publiceras.';
+  if (e instanceof TypeError) return 'Det gick inte att nå Google. Kontrollera nätet och försök igen.';
+  // Visa felkoden så att oväntade fel går att spåra.
+  const detail = code || (e instanceof Error ? e.message : String(e));
+  return `Det gick inte att hämta från kalendern (${detail.slice(0, 120)}). Försök igen.`;
 }
 
 export function CalendarProvider({ children }: { children: ReactNode }) {

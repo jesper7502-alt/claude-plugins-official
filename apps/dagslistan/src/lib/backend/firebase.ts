@@ -71,7 +71,19 @@ const toTask = (d: QueryDocumentSnapshot<DocumentData>): Task => {
   };
 };
 
-const calendarFields = (f: CalendarTaskFields) => ({
+/** Ny kalendertask. Heldag saknar `time`; deleteField() är inte tillåtet när ett dokument skapas. */
+export const calendarCreateData = (f: CalendarTaskFields) => ({
+  title: f.title,
+  date: f.date,
+  repeat: 'none',
+  assignees: f.assignees,
+  ...(f.time ? { time: f.time } : {}),
+  source: 'gcal',
+  createdAt: serverTimestamp(),
+});
+
+/** Ändring av kalendertask. Blir en händelse heldag tas klockslaget bort. */
+export const calendarUpdateData = (f: CalendarTaskFields) => ({
   title: f.title,
   date: f.date,
   repeat: 'none',
@@ -242,9 +254,9 @@ export function createFirebaseBackend(): Backend {
     async applyCalendarTasks({ create, update, remove }) {
       const ops: ((b: ReturnType<typeof writeBatch>) => void)[] = [
         ...create.map((c) => (b: ReturnType<typeof writeBatch>) =>
-          b.set(doc(db, 'tasks', c.id), { ...calendarFields(c.fields), source: 'gcal', createdAt: serverTimestamp() }),
+          b.set(doc(db, 'tasks', c.id), calendarCreateData(c.fields)),
         ),
-        ...update.map((u) => (b: ReturnType<typeof writeBatch>) => b.update(doc(db, 'tasks', u.id), calendarFields(u.fields))),
+        ...update.map((u) => (b: ReturnType<typeof writeBatch>) => b.update(doc(db, 'tasks', u.id), calendarUpdateData(u.fields))),
         ...remove.map((id) => (b: ReturnType<typeof writeBatch>) => b.delete(doc(db, 'tasks', id))),
       ];
       for (let i = 0; i < ops.length; i += BATCH_SIZE) {
