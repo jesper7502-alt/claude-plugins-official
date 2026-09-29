@@ -200,11 +200,12 @@ export function createFirebaseBackend(): Backend {
       await deleteDoc(doc(db, 'done', doneId));
     },
 
-    async connectGoogleCalendar() {
+    async connectGoogleCalendar(opts) {
       const user = auth.currentUser;
       if (!user) throw Object.assign(new Error('not signed in'), { code: 'auth/no-current-user' });
       const provider = new GoogleAuthProvider();
       provider.addScope(CALENDAR_SCOPE);
+      if (opts?.forceConsent) provider.setCustomParameters({ prompt: 'consent' });
       // Första gången kopplas Google-kontot till admin-kontot; därefter loggar man bara in igen för en ny nyckel.
       const linked = user.providerData.some((p) => p.providerId === 'google.com');
       const result = linked ? await reauthenticateWithPopup(user, provider) : await linkWithPopup(user, provider);

@@ -30,7 +30,8 @@ export interface Backend {
   markDone(task: Task, date: string, person: Person): Promise<void>;
 
   /** Loggar in med Google och ger en åtkomstnyckel för att läsa kalendern (giltig ca en timme). */
-  connectGoogleCalendar(): Promise<GoogleToken>;
+  /** `forceConsent` visar Googles behörighetsruta igen, t.ex. om läsrätten inte gavs förra gången. */
+  connectGoogleCalendar(opts?: { forceConsent?: boolean }): Promise<GoogleToken>;
   subscribeCalendarSettings(cb: (s: CalendarSettings | null) => void): () => void;
   setPersonCalendar(personId: string, calendar: LinkedCalendar | null): Promise<void>;
   setCalendarSettings(patch: Partial<Omit<CalendarSettings, 'calendars'>>): Promise<void>;

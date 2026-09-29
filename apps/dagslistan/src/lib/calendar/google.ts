@@ -23,6 +23,13 @@ export class TokenExpiredError extends Error {
   }
 }
 
+/** Inloggningen saknar läsrätt till kalendern (rutan för kalenderåtkomst kryssades inte i). */
+export class MissingScopeError extends Error {
+  constructor() {
+    super('Google gav ingen läsrätt till kalendern.');
+  }
+}
+
 export class GoogleApiError extends Error {
   constructor(
     public status: number,
@@ -43,6 +50,9 @@ async function get<T>(token: string, path: string, params: Record<string, string
       if (body.error?.message) message = body.error.message;
     } catch {
       // Ingen JSON i felet; behåll statuskoden.
+    }
+    if (res.status === 403 && /insufficient authentication scopes|insufficientPermissions|ACCESS_TOKEN_SCOPE_INSUFFICIENT/i.test(message)) {
+      throw new MissingScopeError();
     }
     throw new GoogleApiError(res.status, message);
   }

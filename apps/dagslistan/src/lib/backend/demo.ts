@@ -147,8 +147,10 @@ export function createDemoBackend(): Backend {
       await save();
     },
 
-    async connectGoogleCalendar() {
+    async connectGoogleCalendar(opts) {
       const fake = await AsyncStorage.getItem(FAKE_GOOGLE_KEY).catch(() => null);
+      // Sparas så att testerna kan se om behörighetsrutan begärdes.
+      await AsyncStorage.setItem(`${FAKE_GOOGLE_KEY}.lastConsent`, String(!!opts?.forceConsent)).catch(() => {});
       if (fake !== '1') throw Object.assign(new Error('demo'), { code: 'gcal/demo' });
       return { token: 'demo-token', expiresAt: Date.now() + 55 * 60 * 1000 };
     },

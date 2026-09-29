@@ -5,7 +5,7 @@ import type { GoogleToken } from '../backend/types';
 import { addDays, parseIso, today } from '../dates';
 import { useStore } from '../store';
 import { DEFAULT_KEYWORD, type CalendarSettings, type LinkedCalendar } from '../types';
-import { GoogleApiError, listCalendars, listEvents, TokenExpiredError, type GoogleCalendar } from './google';
+import { GoogleApiError, listCalendars, listEvents, MissingScopeError, TokenExpiredError, type GoogleCalendar } from './google';
 import { planCalendarSync, type FetchedCalendar } from './plan';
 
 /** Hur ofta kalendern hämtas medan admin har sidan öppen. */
@@ -13,6 +13,8 @@ const SYNC_EVERY_MS = 15 * 60 * 1000;
 /** Hur långt fram händelser hämtas. */
 const WINDOW_DAYS = 30;
 const TOKEN_KEY = 'dagslistan.gcal.token';
+/** Satt när Google inte gav läsrätt; nästa inloggning visar då behörighetsrutan igen. */
+const CONSENT_KEY = 'dagslistan.gcal.forceConsent';
 
 type Status = 'idle' | 'connecting' | 'syncing';
 
@@ -54,6 +56,22 @@ function saveToken(t: GoogleToken | null) {
   }
 }
 
+function getForceConsent(): boolean {
+  try {
+    return globalThis.sessionStorage?.getItem(CONSENT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function setForceConsent(on: boolean) {
+  try {
+    if (on) globalThis.sessionStorage?.setItem(CONSENT_KEY, '1');
+    else globalThis.sessionStorage?.removeItem(CONSENT_KEY);
+  } catch {
+    // Utan sessionStorage frågar Google som vanligt.
+  }
+}
+
 function connectErrorText(e: unknown): string {
   const code = (e as { code?: string })?.code ?? '';
   if (code === 'gcal/demo') return 'Google Kalender fungerar när Firebase är inställt, inte i demoläget.';
@@ -69,6 +87,8 @@ function connectErrorText(e: unknown): string {
 
 function syncErrorText(e: unknown): string {
   if (e instanceof TokenExpiredError) return 'Google-inloggningen har gått ut. Tryck på Hämta från kalendern för att logga in igen.';
+  if (e instanceof MissingScopeError)
+    return 'Google gav ingen läsrätt till kalendern. Logga in igen och kryssa i rutan för kalenderåtkomst (”Se och ladda ned alla kalendrar …”) innan du fortsätter.';
   if (e instanceof GoogleApiError) {
     if (e.status === 403 && /has not been used|is disabled/i.test(e.message))
       return 'Google Calendar API är inte påslaget för projektet. Slå på det i Google Cloud Console (se README).';
@@ -152,7 +172,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
           : 'Inga ändringar';
         await backend.setCalendarSettings({ lastSync: Date.now(), lastResult: summary });
       } catch (e) {
-        if (e instanceof TokenExpiredError) setToken(null);
+        if (e instanceof TokenExpiredError || e instanceof MissingScopeError) setToken(null);
+        if (e instanceof MissingScopeError) setForceConsent(true);
         setError(syncErrorText(e));
       } finally {
         busy.current = false;
@@ -166,7 +187,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
     setStatus('connecting');
     setError(null);
     try {
-      const tok = await backend.connectGoogleCalendar();
+      const tok = await backend.connectGoogleCalendar({ forceConsent: getForceConsent() });
+      setForceConsent(false);
       setToken(tok);
       setCalendars(null);
       setStatus('idle');
@@ -211,7 +233,8 @@ export function CalendarProvider({ children }: { children: ReactNode }) {
       .then((list) => !cancelled && setCalendars(list))
       .catch((e: unknown) => {
         if (cancelled) return;
-        if (e instanceof TokenExpiredError) setToken(null);
+        if (e instanceof TokenExpiredError || e instanceof MissingScopeError) setToken(null);
+        if (e instanceof MissingScopeError) setForceConsent(true);
         setError(syncErrorText(e));
       });
     return () => {
