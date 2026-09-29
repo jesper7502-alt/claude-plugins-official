@@ -78,7 +78,7 @@ function connectErrorText(e: unknown): string {
   if (code === 'auth/popup-blocked') return 'Webbläsaren blockerade inloggningsfönstret. Tillåt popup-fönster för sidan och försök igen.';
   if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') return 'Inloggningen avbröts.';
   if (code === 'auth/credential-already-in-use')
-    return 'Det Google-kontot är redan kopplat till ett annat konto i Dagslistan. Välj ett annat Google-konto.';
+    return 'Det Google-kontot är redan kopplat till ett annat konto i appen. Välj ett annat Google-konto.';
   if (code === 'auth/user-mismatch') return 'Välj samma Google-konto som du kopplade första gången.';
   if (code === 'auth/operation-not-allowed') return 'Google-inloggning är inte påslagen i Firebase (Authentication → Sign-in method → Google).';
   if (code === 'auth/unauthorized-domain') return 'Den här adressen är inte godkänd i Firebase (Authentication → Settings → Authorized domains).';

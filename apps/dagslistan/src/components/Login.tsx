@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
+import { APP_ICON_URI } from '../lib/appIcon';
+import { APP_NAME } from '../lib/config';
 import { useStore } from '../lib/store';
 import { useColors } from '../lib/theme';
 import { Button, Card, Field, H2, Muted, Screen, styles } from './ui';
@@ -9,10 +11,8 @@ function Brand() {
   const c = useColors();
   return (
     <View style={[styles.row, { alignSelf: 'center', marginTop: 24 }]}>
-      <View style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ color: c.accentInk, fontWeight: '900', fontSize: 20 }}>✓</Text>
-      </View>
-      <Text style={{ color: c.ink, fontSize: 26, fontWeight: '800', letterSpacing: -0.5 }}>Dagslistan</Text>
+      <Image source={{ uri: APP_ICON_URI }} style={{ width: 40, height: 40 }} accessibilityElementsHidden />
+      <Text style={{ color: c.ink, fontSize: 26, fontWeight: '800', letterSpacing: -0.5, flexShrink: 1 }}>{APP_NAME}</Text>
     </View>
   );
 }

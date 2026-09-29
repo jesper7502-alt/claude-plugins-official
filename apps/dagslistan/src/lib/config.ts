@@ -1,3 +1,6 @@
+/** Appens namn: under hemskärmsikonen, i sidhuvudet och på inloggningssidan. */
+export const APP_NAME = 'Checklist - Familj';
+
 export const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY ?? '',
   authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN ?? '',

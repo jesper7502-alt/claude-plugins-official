@@ -1,0 +1,4 @@
+// Appens ikon (hus med bock) som SVG, för inloggningssidan. Samma motiv som hemskärmsikonerna i public/.
+export const APP_ICON_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><defs><linearGradient id=\"bg\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#6E90E4\"/><stop offset=\"1\" stop-color=\"#4F72CC\"/></linearGradient></defs><rect width=\"100\" height=\"100\" rx=\"22\" fill=\"url(#bg)\"/><path d=\"M50 20 L82 47 L74 47 L74 80 L26 80 L26 47 L18 47 Z\" fill=\"#FFFFFF\" stroke=\"#FFFFFF\" stroke-width=\"4\" stroke-linejoin=\"round\"/><rect x=\"62\" y=\"24\" width=\"8\" height=\"14\" rx=\"1.5\" fill=\"#FFFFFF\"/><path d=\"M37 60 L46 69 L64 50\" fill=\"none\" stroke=\"#5B7FD6\" stroke-width=\"7.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>";
+
+export const APP_ICON_URI = `data:image/svg+xml;base64,${btoa(APP_ICON_SVG)}`;

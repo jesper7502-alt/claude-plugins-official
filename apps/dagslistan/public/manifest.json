@@ -1,6 +1,6 @@
 {
-  "name": "Dagslistan",
-  "short_name": "Dagslistan",
+  "name": "Checklist - Familj",
+  "short_name": "Checklist - Familj",
   "description": "Delad checklista: planera tasks per person och dag och bocka av med ett klick.",
   "lang": "sv",
   "start_url": "/",

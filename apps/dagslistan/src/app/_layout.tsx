@@ -7,6 +7,7 @@ import { Login, NoAccess } from '../components/Login';
 import { tabIcon } from '../components/TabIcon';
 import { Toast } from '../components/Toast';
 import { CalendarProvider } from '../lib/calendar/CalendarProvider';
+import { APP_NAME } from '../lib/config';
 import { StoreProvider, useStore } from '../lib/store';
 import { useColors } from '../lib/theme';
 
@@ -37,7 +38,7 @@ function AppTabs({ admin }: { admin: boolean }) {
         tabBarStyle: admin ? { backgroundColor: c.surface, borderTopColor: c.line } : { display: 'none' },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Tasks', headerTitle: 'Dagslistan', tabBarIcon: tabIcon('tasks') }} />
+      <Tabs.Screen name="index" options={{ title: 'Tasks', headerTitle: APP_NAME, tabBarIcon: tabIcon('tasks') }} />
       <Tabs.Screen name="planering" options={{ title: 'Planering', tabBarIcon: tabIcon('planering'), href: admin ? undefined : null }} />
       <Tabs.Screen name="genomfort" options={{ title: 'Genomfört', tabBarIcon: tabIcon('genomfort'), href: admin ? undefined : null }} />
       {/* Nås via knappen i Planering, syns inte i flikraden. */}
