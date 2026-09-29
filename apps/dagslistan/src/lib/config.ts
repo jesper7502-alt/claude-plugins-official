@@ -10,5 +10,8 @@ export const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID ?? '',
 };
 
+/** Bara för tester: använd Firebases lokala emulatorer i stället för det riktiga projektet. */
+export const USE_EMULATORS = process.env.EXPO_PUBLIC_FIREBASE_EMULATORS === '1';
+
 /** Utan Firebase-uppgifter körs sidan i demoläge med data sparad lokalt i webbläsaren. */
 export const HAS_FIREBASE = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId);

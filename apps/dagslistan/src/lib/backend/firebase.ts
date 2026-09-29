@@ -1,5 +1,6 @@
 import { getApps, initializeApp } from 'firebase/app';
 import {
+  connectAuthEmulator,
   getAuth,
   GoogleAuthProvider,
   linkWithPopup,
@@ -9,7 +10,9 @@ import {
   signOut,
 } from 'firebase/auth';
 import {
+  clearIndexedDbPersistence,
   collection,
+  connectFirestoreEmulator,
   deleteDoc,
   deleteField,
   doc,
@@ -18,18 +21,41 @@ import {
   limit,
   onSnapshot,
   orderBy,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   query,
   serverTimestamp,
   setDoc,
+  terminate,
   updateDoc,
   writeBatch,
   type DocumentData,
   type QueryDocumentSnapshot,
 } from 'firebase/firestore';
 
-import { firebaseConfig } from '../config';
+import { firebaseConfig, USE_EMULATORS } from '../config';
 import { DEFAULT_KEYWORD, doneKey, type CalendarSettings, type Done, type Person, type Repeat, type Role, type Task, type TaskInput } from '../types';
 import type { Backend, CalendarTaskFields, Data } from './types';
+
+const ROLE_KEY = 'dagslistan.role.';
+
+// Senast kända roll per konto, så att appen kan visas direkt medan rollen kontrolleras.
+function cachedRole(uid: string): Role | null {
+  try {
+    const r = globalThis.localStorage?.getItem(ROLE_KEY + uid);
+    return r === 'admin' || r === 'member' ? r : null;
+  } catch {
+    return null;
+  }
+}
+function saveRole(uid: string, role: Role | null) {
+  try {
+    if (role && role !== 'none') globalThis.localStorage?.setItem(ROLE_KEY + uid, role);
+    else globalThis.localStorage?.removeItem(ROLE_KEY + uid);
+  } catch {
+    // Utan localStorage kontrolleras rollen varje gång.
+  }
+}
 
 /** Hur många avbockningar historiken läser in. */
 const DONE_LIMIT = 500;
@@ -119,7 +145,13 @@ const toDone = (d: QueryDocumentSnapshot<DocumentData>): Done => {
 export function createFirebaseBackend(): Backend {
   const app = getApps()[0] ?? initializeApp(firebaseConfig);
   const auth = getAuth(app);
-  const db = initializeFirestore(app, {});
+  // Datan sparas lokalt i webbläsaren (IndexedDB), så att listorna visas direkt nästa gång appen öppnas
+  // och uppdateras i bakgrunden. Saknas IndexedDB (t.ex. privat läge) används minnet i stället.
+  const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+  if (USE_EMULATORS) {
+    connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+    connectFirestoreEmulator(db, '127.0.0.1', 8085);
+  }
 
   return {
     kind: 'firebase',
@@ -156,7 +188,11 @@ export function createFirebaseBackend(): Backend {
           cb({ status: 'signedOut' });
           return;
         }
+        // Visa appen direkt med senast kända roll, och kontrollera den sedan mot databasen.
+        const cached = cachedRole(user.uid);
+        if (cached) cb({ status: 'signedIn', email: user.email, uid: user.uid, role: cached });
         // Rollen avgörs av om kontots uid finns i admins eller members (läggs in i Firebase-konsolen).
+        // Båda kontrolleras samtidigt för att spara en väntan över nätet.
         const has = async (col: string) => {
           try {
             return (await getDoc(doc(db, col, user.uid))).exists();
@@ -164,8 +200,10 @@ export function createFirebaseBackend(): Backend {
             return false;
           }
         };
-        const role: Role = (await has('admins')) ? 'admin' : (await has('members')) ? 'member' : 'none';
-        cb({ status: 'signedIn', email: user.email, uid: user.uid, role });
+        const [isAdmin, isMember] = await Promise.all([has('admins'), has('members')]);
+        const role: Role = isAdmin ? 'admin' : isMember ? 'member' : 'none';
+        saveRole(user.uid, role);
+        if (role !== cached) cb({ status: 'signedIn', email: user.email, uid: user.uid, role });
       });
     },
 
@@ -173,7 +211,17 @@ export function createFirebaseBackend(): Backend {
       await signInWithEmailAndPassword(auth, email, password);
     },
     async signOut() {
+      const uid = auth.currentUser?.uid;
       await signOut(auth);
+      if (uid) saveRole(uid, null);
+      // Rensa den lokala kopian av datan så att inget ligger kvar i webbläsaren efter utloggning.
+      try {
+        await terminate(db);
+        await clearIndexedDbPersistence(db);
+      } catch {
+        // Går det inte att rensa nu rensas den nästa gång.
+      }
+      globalThis.location?.reload();
     },
 
     async addPerson(name, color, animal) {
