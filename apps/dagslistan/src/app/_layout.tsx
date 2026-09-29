@@ -1,19 +1,13 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ActivityIndicator, Pressable, Text, View, type ColorValue } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Login, NoAccess } from '../components/Login';
+import { tabIcon } from '../components/TabIcon';
 import { Toast } from '../components/Toast';
 import { StoreProvider, useStore } from '../lib/store';
 import { useColors } from '../lib/theme';
-
-type IconName = keyof typeof Ionicons.glyphMap;
-const icon = (name: IconName) =>
-  function TabIcon({ color, size }: { color: ColorValue; size: number }) {
-    return <Ionicons name={name} color={color as string} size={size} />;
-  };
 
 function SignOutButton() {
   const s = useStore();
@@ -42,9 +36,9 @@ function AppTabs({ admin }: { admin: boolean }) {
         tabBarStyle: admin ? { backgroundColor: c.surface, borderTopColor: c.line } : { display: 'none' },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Tasks', headerTitle: 'Dagslistan', tabBarIcon: icon('checkbox-outline') }} />
-      <Tabs.Screen name="planering" options={{ title: 'Planering', tabBarIcon: icon('calendar-outline'), href: admin ? undefined : null }} />
-      <Tabs.Screen name="genomfort" options={{ title: 'Genomfört', tabBarIcon: icon('time-outline'), href: admin ? undefined : null }} />
+      <Tabs.Screen name="index" options={{ title: 'Tasks', headerTitle: 'Dagslistan', tabBarIcon: tabIcon('tasks') }} />
+      <Tabs.Screen name="planering" options={{ title: 'Planering', tabBarIcon: tabIcon('planering'), href: admin ? undefined : null }} />
+      <Tabs.Screen name="genomfort" options={{ title: 'Genomfört', tabBarIcon: tabIcon('genomfort'), href: admin ? undefined : null }} />
     </Tabs>
   );
 }
