@@ -14,6 +14,17 @@
         "source": "**",
         "destination": "/index.html"
       }
+    ],
+    "headers": [
+      {
+        "source": "**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
+      }
     ]
   },
   "emulators": {
@@ -22,6 +33,9 @@
     },
     "ui": {
       "enabled": false
+    },
+    "hosting": {
+      "port": 8086
     }
   }
 }
