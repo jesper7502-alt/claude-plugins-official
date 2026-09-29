@@ -1,6 +1,6 @@
 // Tester för firestore.rules. Körs i Firestore-emulatorn: npm run test:rules (kräver Java).
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing';
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { readFileSync } from 'node:fs';
 
 const env = await initializeTestEnvironment({
@@ -67,6 +67,15 @@ await t('vanlig användare kan inte ta bort task', assertFails(deleteDoc(doc(mem
 await t('admin kan skapa person', assertSucceeds(setDoc(doc(admin, 'people/x'), { name: 'X', color: '#000', createdAt: serverTimestamp() })));
 await t('admin kan skapa task', assertSucceeds(setDoc(doc(admin, 'tasks/t2'), task)));
 await t('admin kan inte skapa task utan person', assertFails(setDoc(doc(admin, 'tasks/t3'), { ...task, assignees: [] })));
+
+// Djur
+await t('vanlig användare kan byta djur', assertSucceeds(updateDoc(doc(member, 'people/a'), { animal: 'fox' })));
+await t('vanlig användare kan ta bort djur', assertSucceeds(updateDoc(doc(member, 'people/a'), { animal: deleteField() })));
+await t('vanlig användare kan inte byta namn samtidigt', assertFails(updateDoc(doc(member, 'people/a'), { animal: 'cat', name: 'Hack' })));
+await t('vanlig användare kan inte byta färg', assertFails(updateDoc(doc(member, 'people/a'), { color: '#fff' })));
+await t('vanlig användare kan inte sätta för långt djurnamn', assertFails(updateDoc(doc(member, 'people/a'), { animal: 'x'.repeat(50) })));
+await t('främlingskonto kan inte byta djur', assertFails(updateDoc(doc(stranger, 'people/a'), { animal: 'fox' })));
+await t('admin kan skapa person med djur', assertSucceeds(setDoc(doc(admin, 'people/y'), { name: 'Y', color: '#000', animal: 'owl', createdAt: serverTimestamp() })));
 
 // Avbockning
 await t('främlingskonto kan inte bocka av', assertFails(setDoc(doc(stranger, 'done/t1__2026-09-25'), done('t1', '2026-09-25', 'a'))));

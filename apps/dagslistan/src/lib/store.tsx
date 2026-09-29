@@ -6,6 +6,7 @@ import { createFirebaseBackend } from './backend/firebase';
 import type { Backend, Data } from './backend/types';
 import { HAS_FIREBASE } from './config';
 import { today } from './dates';
+import { ANIMALS } from './animals';
 import { PERSON_COLORS } from './theme';
 import { doneKey, type Done, type Person, type Role, type Session, type Task, type TaskInput } from './types';
 
@@ -37,6 +38,7 @@ type Store = {
   signIn: (email: string, password: string) => Promise<string | null>;
   signOut: () => Promise<void>;
   addPerson: (name: string) => Promise<boolean>;
+  setAnimal: (id: string, animal: string | null) => Promise<boolean>;
   renamePerson: (id: string, name: string) => Promise<boolean>;
   removePerson: (id: string) => Promise<boolean>;
   addTask: (input: TaskInput) => Promise<boolean>;
@@ -165,8 +167,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     addPerson(name) {
       const used = new Set(people.map((p) => p.color));
       const color = PERSON_COLORS.find((c) => !used.has(c)) ?? PERSON_COLORS[people.length % PERSON_COLORS.length];
-      return run(() => backend.addPerson(name, color));
+      // Ett slumpat djur som ingen annan har (eller vilket som helst om alla är tagna).
+      const taken = new Set(people.map((p) => p.animal));
+      const free = ANIMALS.filter((a) => !taken.has(a.key));
+      const pool = free.length ? free : ANIMALS;
+      const animal = pool[Math.floor(Math.random() * pool.length)].key;
+      return run(() => backend.addPerson(name, color, animal));
     },
+    setAnimal: (id, animal) => run(() => backend.setAnimal(id, animal)),
     renamePerson: (id, name) => run(() => backend.renamePerson(id, name)),
     removePerson: (id) => run(() => backend.removePerson(id, tasks)),
     addTask: (input) => run(() => backend.addTask(input)),

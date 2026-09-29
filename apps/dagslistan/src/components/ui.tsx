@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View, type TextInputProps, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { animalUri, isAnimal } from '../lib/animals';
 import { radius, useColors } from '../lib/theme';
 import type { Person } from '../lib/types';
 
@@ -14,7 +15,8 @@ const initials = (name: string) =>
     .join('')
     .toUpperCase();
 
-export function Avatar({ person, size = 24 }: { person?: Pick<Person, 'name' | 'color'>; size?: number }) {
+export function Avatar({ person, size = 24 }: { person?: Pick<Person, 'name' | 'color' | 'animal'>; size?: number }) {
+  const animal = person?.animal;
   return (
     <View
       aria-hidden
@@ -24,12 +26,17 @@ export function Avatar({ person, size = 24 }: { person?: Pick<Person, 'name' | '
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: person?.color ?? '#7A8580',
+        backgroundColor: person?.color ?? '#72819E',
         alignItems: 'center',
         justifyContent: 'center',
+        overflow: 'hidden',
       }}
     >
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: size * 0.4 }}>{initials(person?.name ?? '?')}</Text>
+      {isAnimal(animal) ? (
+        <Image source={{ uri: animalUri(animal) }} style={{ width: size, height: size }} />
+      ) : (
+        <Text style={{ color: '#fff', fontWeight: '700', fontSize: size * 0.4 }}>{initials(person?.name ?? '?')}</Text>
+      )}
     </View>
   );
 }

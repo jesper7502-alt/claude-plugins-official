@@ -8,7 +8,7 @@ Alla loggar in. Vad man kan göra beror på kontot:
 | Konto | Ser | Kan |
 |---|---|---|
 | **Admin** | Tasks, Planering, Genomfört | Lägga till och ändra personer och tasks, bocka av, se historik och ångra |
-| **Vanlig inloggning** (gemensam) | Tasks | Se allas tasks och bocka av. Väljer "Vem är du?" en gång per enhet; de egna tasks visas då överst. |
+| **Vanlig inloggning** (gemensam) | Tasks | Se allas tasks och bocka av. Väljer "Vem är du?" en gång per enhet; de egna tasks visas då överst. Kan byta djur på sin egen avatar. |
 
 Data och inloggning ligger i Firebase (Firestore, Authentication och Hosting). Firebase har en gratisnivå som räcker gott.
 
@@ -69,7 +69,7 @@ eller *⋮ → Lägg till på startskärmen* (Android, Chrome).
 Reglerna i `firestore.rules` avgör vad som tillåts. Det är de som skyddar datan, inte sidan:
 
 - Bara konton i `admins` kan ändra personer och tasks.
-- Konton i `members` (och `admins`) kan läsa och bocka av. Alla andra nekas.
+- Konton i `members` (och `admins`) kan läsa, bocka av och byta djur på en person. Alla andra nekas.
 - En avbockning godtas bara för en task som finns, av en person som är tilldelad den, och med serverns klockslag.
 - Vanliga användare kan bara ångra avbockningar från det senaste dygnet.
 
@@ -80,6 +80,8 @@ npm run test:rules
 ```
 
 ## Bra att veta
+
+- Varje person har ett tecknat djur som avatar (12 att välja mellan). Nya personer får ett ledigt djur automatiskt. Tryck på avataren för att byta: admin i Planering, vanliga användare på sin egen avatar under Tasks.
 
 - Den gemensamma inloggningen vet inte vem som sitter vid skärmen. Den som bockar av räknas som personen vars lista tasken bockades av i.
 - Återkommande tasks som missas följer inte med till nästa dag. Bara engångstasks hamnar under *Försenade*.

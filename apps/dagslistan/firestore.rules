@@ -2,7 +2,7 @@ rules_version = '2';
 
 // Dagslistan
 // - Admin (uid finns i samlingen admins) får ändra personer och tasks.
-// - Vanliga användare (uid finns i samlingen members) får läsa och bocka av.
+// - Vanliga användare (uid finns i samlingen members) får läsa, bocka av och byta djur på en person.
 // - Andra konton, t.ex. sådana som skapats via Firebase:s öppna API, får ingenting.
 // - Avbockning kan bara göras för en task som finns, av en person som är tilldelad den.
 // - Vanliga användare kan bara ångra avbockningar från det senaste dygnet.
@@ -29,12 +29,23 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Djuret är valfritt; saknas det visas initialer.
+    function validAnimal() {
+      return !('animal' in request.resource.data)
+        || (request.resource.data.animal is string && request.resource.data.animal.size() <= 20);
+    }
+
     match /people/{id} {
       allow read: if isMember();
       allow create, update: if isAdmin()
         && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() <= 40;
+        && request.resource.data.name.size() <= 40
+        && validAnimal();
+      // Vanliga användare får byta djur på en person, men inget annat.
+      allow update: if isMember()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['animal'])
+        && validAnimal();
       allow delete: if isAdmin();
     }
 

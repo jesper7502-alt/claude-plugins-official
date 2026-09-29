@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
+import { AvatarButton } from '../components/AnimalPicker';
 import { DatePicker } from '../components/DatePicker';
 import { Avatar, Button, Card, Chip, Field, H2, Muted, Screen, styles } from '../components/ui';
 import { formatShort, relativeDay, today } from '../lib/dates';
@@ -75,7 +76,7 @@ function PeopleCard() {
         const isEditing = editing?.id === p.id;
         return (
           <View key={p.id} style={[styles.row, { paddingTop: 10, borderTopWidth: i ? 1 : 0, borderTopColor: c.line }]}>
-            <Avatar person={p} size={34} />
+            <AvatarButton person={p} size={34} />
             {isEditing ? (
               <TextInput
                 value={editing.name}

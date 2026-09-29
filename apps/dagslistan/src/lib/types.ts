@@ -4,6 +4,8 @@ export type Person = {
   id: string;
   name: string;
   color: string;
+  /** Nyckel i ANIMALS (t.ex. "fox"). Saknas den visas initialer. */
+  animal?: string;
   createdAt: number;
 };
 

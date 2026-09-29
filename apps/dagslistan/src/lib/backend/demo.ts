@@ -76,9 +76,13 @@ export function createDemoBackend(): Backend {
       setSession({ status: 'signedOut' });
     },
 
-    async addPerson(name, color) {
-      const p: Person = { id: uid(), name, color, createdAt: Date.now() };
+    async addPerson(name, color, animal) {
+      const p: Person = { id: uid(), name, color, animal, createdAt: Date.now() };
       data = { ...data, people: [...data.people, p] };
+      await save();
+    },
+    async setAnimal(id, animal) {
+      data = { ...data, people: data.people.map((p) => (p.id === id ? { ...p, animal: animal ?? undefined } : p)) };
       await save();
     },
     async renamePerson(id, name) {

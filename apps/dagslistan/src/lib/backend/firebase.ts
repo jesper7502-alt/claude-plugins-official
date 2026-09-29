@@ -3,6 +3,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   initializeFirestore,
@@ -35,7 +36,13 @@ const millis = (v: unknown): number => {
 
 const toPerson = (d: QueryDocumentSnapshot<DocumentData>): Person => {
   const v = d.data();
-  return { id: d.id, name: String(v.name ?? ''), color: String(v.color ?? '#5B6963'), createdAt: millis(v.createdAt) };
+  return {
+    id: d.id,
+    name: String(v.name ?? ''),
+    color: String(v.color ?? '#72819E'),
+    animal: typeof v.animal === 'string' ? v.animal : undefined,
+    createdAt: millis(v.createdAt),
+  };
 };
 
 const toTask = (d: QueryDocumentSnapshot<DocumentData>): Task => {
@@ -125,8 +132,11 @@ export function createFirebaseBackend(): Backend {
       await signOut(auth);
     },
 
-    async addPerson(name, color) {
-      await setDoc(doc(collection(db, 'people')), { name, color, createdAt: serverTimestamp() });
+    async addPerson(name, color, animal) {
+      await setDoc(doc(collection(db, 'people')), { name, color, animal, createdAt: serverTimestamp() });
+    },
+    async setAnimal(id, animal) {
+      await updateDoc(doc(db, 'people', id), { animal: animal ?? deleteField() });
     },
     async renamePerson(id, name) {
       await updateDoc(doc(db, 'people', id), { name });

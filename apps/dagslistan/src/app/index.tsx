@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { useMemo } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 
+import { AvatarButton } from '../components/AnimalPicker';
 import { DatePicker } from '../components/DatePicker';
 import { TaskRow } from '../components/TaskRow';
 import { Avatar, Button, Card, Chip, H1, H2, Label, Muted, Pill, Screen, Segmented, styles } from '../components/ui';
@@ -157,7 +158,7 @@ function PersonColumn({
   return (
     <Card style={{ flexGrow: 1, flexBasis: isMe ? '100%' : 300, gap: 4, borderColor: isMe ? c.accent : c.line }}>
       <View style={[styles.row, { paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: c.line }]}>
-        <Avatar person={person} size={34} />
+        {isMe || s.isAdmin ? <AvatarButton person={person} size={34} /> : <Avatar person={person} size={34} />}
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: c.ink, fontSize: 19, fontWeight: '700' }}>{person.name}</Text>
           {isMe ? <Text style={{ color: c.accentText, fontSize: 12, fontWeight: '700', letterSpacing: 0.8 }}>DU</Text> : null}
